@@ -30,6 +30,7 @@ BT4-V-Antenna/
 ├── Plan.md                       # Implementation plan and task tracking
 ├── Testing Strategy.md           # Verification procedures and test baselines
 ├── Bugs.md                       # Issue tracker
+├── ASSEMBLY.md                   # Step-by-step physical assembly & build guide
 ├── BT4-V BOM.md                  # Bill of materials and hardware stack
 ├── Update.md                     # Gap assessment and migration tracking
 ├── bt4v_generate_all.sh          # Headless build orchestrator
@@ -95,6 +96,7 @@ FREECAD_CMD=freecadcmd ./bt4v_generate_all.sh
 - `Requirements.md`: Authoritative engineering specification.
 - `Plan.md`: Implementation status and task tracking.
 - `Testing Strategy.md`: Verification procedures and build regression criteria.
+- `ASSEMBLY.md`: Step-by-step physical assembly, wire preparation, and installation guide.
 - `BT4-V BOM.md`: Complete bill of materials, fasteners, and print settings.
 - `Update.md`: Gap assessment and migration tracking.
 

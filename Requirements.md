@@ -1,9 +1,9 @@
 # BT4-V 3D Printed Antenna — Software & Hardware Requirements
 
-**Version:** 0.2.0  
+**Version:** 0.3.0  
 **Date:** November 2026  
 **Project:** BT4-V 3D Printed Antenna  
-**Primary Output:** FreeCAD-generated STL parts, 2D technical drawing, and part preview rendering  
+**Primary Output:** FreeCAD-generated STL parts, 2D technical drawing, part preview rendering, assembly guide, and bill of materials  
 
 ---
 
@@ -17,17 +17,16 @@
 6. [Whisker Bay Bracket Generator (bt4v_bay_bracket.py)](#6-whisker-bay-bracket-generator-bt4v_bay_bracketpy)
 7. [Spine Segment Generator (bt4v_spine_segment.py)](#7-spine-segment-generator-bt4v_spine_segmentpy)
 8. [Phase Crossover Spacer Generator (bt4v_phase_crossover.py)](#8-phase-crossover-spacer-generator-bt4v_phase_crossoverpy)
-9. [Triangular Tine Spreader Generator (bt4v_whisker_spreader.py)](#9-triangular-tine-spreader-generator-bt4v_whisker_spreaderpy)
-10. [Mid-Span Bowtie Support Strut Generator (bt4v_bowtie_support.py)](#10-mid-span-bowtie-support-strut-generator-bt4v_bowtie_supportpy)
-11. [Top Hanging Cap Generator (bt4v_hanging_cap.py)](#11-top-hanging-cap-generator-bt4v_hanging_cappy)
-12. [Fit Coupon Generator (bt4v_fit_coupon.py)](#12-fit-coupon-generator-bt4v_fit_couponpy)
-13. [Drawing & Preview Generators](#13-drawing--preview-generators)
-14. [Build Orchestration (bt4v_generate_all.sh)](#14-build-orchestration-bt4v_generate_allsh)
-15. [Assembly, Wiring & Installation](#15-assembly-wiring--installation)
-16. [Bill of Materials](#16-bill-of-materials)
-17. [Non-Functional Requirements](#17-non-functional-requirements)
-18. [Out of Scope](#18-out-of-scope)
-19. [Revision History](#19-revision-history)
+9. [Full-Length Bowtie Backing Strut Generator (bt4v_bowtie_backing.py)](#9-full-length-bowtie-backing-strut-generator-bt4v_bowtie_backingpy)
+10. [Top Hanging Cap Generator (bt4v_hanging_cap.py)](#10-top-hanging-cap-generator-bt4v_hanging_cappy)
+11. [Fit Coupon Generator (bt4v_fit_coupon.py)](#11-fit-coupon-generator-bt4v_fit_couponpy)
+12. [Drawing & Preview Generators](#12-drawing--preview-generators)
+13. [Build Orchestration (bt4v_generate_all.sh)](#13-build-orchestration-bt4v_generate_allsh)
+14. [Assembly, Wiring & Installation (ASSEMBLY.md)](#14-assembly-wiring--installation-assemblymd)
+15. [Bill of Materials (BT4-V BOM.md)](#15-bill-of-materials-bt4-v-bommd)
+16. [Non-Functional Requirements](#16-non-functional-requirements)
+17. [Out of Scope](#17-out-of-scope)
+18. [Revision History](#18-revision-history)
 
 ---
 
@@ -39,11 +38,10 @@ The antenna combines:
 - **Four co-phased bowtie bays** arranged vertically along a modular 3D-printed spine.
 - **Strictly horizontal polarisation (0° tilt across all elements)**, eliminating cross-polarisation loss.
 - **Dual-band coverage:** The inner two bays (Bays 2 and 3) are tuned for high-gain broadband UHF reception (470–608 MHz, channels 14–36), while the outer two bays (Bays 1 and 4, top and bottom) feature extended whiskers tuned for VHF-High reception (174–216 MHz, channels 7–13).
-- **Triangular Tine Spreaders:** Lightweight 3D-printed spreader clips bridge the extended VHF whisker tines into rigid truss triangles, eliminating gravity droop without heavy cantilever spars.
-- **Mid-Span Bowtie Support Struts:** Rigid 3D-printed bridging struts connecting the central bay brackets to intermediate points along the bowtie whisker arms. These eliminate manual positioning difficulty during assembly, enforce exact flare angles permanently, and prevent mechanical drift or vibration.
+- **Full-Length Bowtie Backing Struts:** Continuous 3D-printed snap-fit backing struts running from bay bracket root to wire tip, permanently locking exact flare angles (32.5° UHF, 25.5° VHF) and completely eliminating gravity sag, droop, or vibration.
 - **RCA VH101R Matching Transformer Integration:** A commercial 300:75 Ω outdoor matching transformer (4:1 balun) mounts directly to the center feed bracket via its screw lugs, providing a female F-connector output for direct 75 Ω RG6 coaxial feed to the television.
 
-BT4-V delivers +6 to +8 dBi forward gain across UHF and +3 to +4 dBi across VHF-High in an ultra-lightweight (~210 g), flat, modular form factor fitting a standard window (<600 mm height).
+BT4-V delivers +6 to +8 dBi forward gain across UHF and +3 to +4 dBi across VHF-High in an ultra-lightweight (~210 g), flat, modular form factor fitting a standard window (<600 mm height). Detailed build instructions and material inventories are provided in `ASSEMBLY.md` and `BT4-V BOM.md`.
 
 ---
 
@@ -55,6 +53,7 @@ BT4-V-Antenna/
 ├── Plan.md                           # Implementation plan and task tracking
 ├── Testing Strategy.md               # Verification procedures and test baselines
 ├── Bugs.md                           # Issue tracker
+├── ASSEMBLY.md                       # Step-by-step physical assembly & build guide
 ├── BT4-V BOM.md                      # Bill of materials and hardware stack
 ├── Update.md                         # Gap assessment and migration tracking
 ├── bt4v_generate_all.sh              # Headless build orchestrator
@@ -70,8 +69,7 @@ BT4-V-Antenna/
 │   ├── bt4v_bay_bracket.py           # Whisker mounting bracket (Bays 1–4)
 │   ├── bt4v_spine_segment.py         # Interlocking modular vertical spine struts
 │   ├── bt4v_phase_crossover.py       # Phase-line crossover insulator / guide
-│   ├── bt4v_whisker_spreader.py      # Triangular tine spreader for VHF whiskers
-│   ├── bt4v_bowtie_support.py        # Mid-span bowtie support strut for bays 1–4
+│   ├── bt4v_bowtie_backing.py        # Full-length bowtie backing strut
 │   ├── bt4v_hanging_cap.py           # Top hanging cap with suspension eyelets
 │   ├── bt4v_fit_coupon.py            # Pre-print tolerance and snap-fit coupon
 │   ├── bt4v_drawing.py               # 2D technical drawing generator (Pillow)
@@ -82,8 +80,7 @@ BT4-V-Antenna/
     ├── BT4V_Bay_Bracket.stl
     ├── BT4V_Spine_Segment.stl
     ├── BT4V_Phase_Crossover.stl
-    ├── BT4V_Whisker_Spreader.stl
-    ├── BT4V_Bowtie_Support.stl
+    ├── BT4V_Bowtie_Backing.stl
     ├── BT4V_Hanging_Cap.stl
     └── BT4V_Fit_Coupon.stl
 ```
@@ -249,48 +246,27 @@ Generates the clip-on phase transposition spacer placed between Bay 1–2 and Ba
 
 ---
 
-## 9. Triangular Tine Spreader Generator (`bt4v_whisker_spreader.py`)
+## 9. Full-Length Bowtie Backing Strut Generator (`bt4v_bowtie_backing.py`)
 
 ### 9.1 Purpose & Output
 
-Generates the lightweight triangular spreader clip for the extended VHF-Hi whiskers on Bays 1 and 4, exported as **`stl/BT4V_Whisker_Spreader.stl`**. Quantity required: **4** (1 per VHF whisker).
+Generates the continuous snap-fit backing strut running from bay bracket root to wire tip, exported as **`stl/BT4V_Bowtie_Backing.stl`**. Quantity required: **8** (2 per bay across Bays 1–4, supporting upper and lower V-whiskers).
 
 ### 9.2 Geometry & Features
 
 | Feature | Requirement |
 |---|---|
-| Purpose | Snaps across upper and lower tines of VHF whisker at ~150 mm from apex, forming a rigid triangle |
-| Span Between Jaws | 66.0 mm center-to-center (matching the 25.5° flare at 150 mm radius) |
-| Wire Retention Jaws | Snap-fit C-clips with 2.2 mm opening into 3.2 mm circular wire cavity |
-| Strut Profile | 5.0 mm × 3.0 mm ribbed truss cross-section for maximum stiffness at minimum weight (<3 g each) |
+| Purpose | Permanently locks exact flare angles (32.5° UHF, 25.5° VHF) from root to tip and completely eliminates gravity sag, droop, or vibration |
+| Channel & Length | Continuous 3.2 mm wire retention channel along a 210 mm span |
+| Strut Profile | Ribbed truss profile (12.0 mm wide × 8.0 mm high) for maximum rigidity at minimum mass (~2.5 g each) |
 
 ### 9.3 Diagnostic & Validation Requirements
 
-- Single valid solid, volume approximately **2,200 mm³ (±2%)**.
+- Single valid solid, volume approximately **2,400 mm³ (±2%)**.
 
 ---
 
-## 10. Mid-Span Bowtie Support Strut Generator (`bt4v_bowtie_support.py`)
-
-### 10.1 Purpose & Output
-
-Generates the rigid mid-span support strut bridging between the bay bracket / spine structure and intermediate points along the bowtie whisker arms, exported as **`stl/BT4V_Bowtie_Support.stl`**. Quantity required: **8** (2 per bay across Bays 1–4, supporting upper and lower whisker arms).
-
-### 10.2 Geometry & Features
-
-| Feature | Requirement |
-|---|---|
-| Purpose | Eliminates manual positioning difficulty during assembly, locks bowtie arms at exact flare angles (32.5° UHF, 25.5° VHF), and prevents mechanical drift, sagging, or vibration |
-| Mounting Ends | Inner end locks securely into the bay bracket support pocket; outer end features a snap-fit C-clip jaw (2.2 mm mouth into 3.2 mm circular cavity) gripping the 12 AWG whisker at mid-span (~100 mm for UHF, ~200 mm for VHF) |
-| Strut Profile | 6.0 mm × 3.0 mm ribbed truss profile for maximum rigidity at minimum mass (~2.5 g each) |
-
-### 10.3 Diagnostic & Validation Requirements
-
-- Single valid solid, volume approximately **1,800 mm³ (±2%)**.
-
----
-
-## 11. Top Hanging Cap Generator (`bt4v_hanging_cap.py`)
+## 10. Top Hanging Cap Generator (`bt4v_hanging_cap.py`)
 
 ### 11.1 Purpose & Output
 
