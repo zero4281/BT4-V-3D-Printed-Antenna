@@ -1,5 +1,5 @@
 """
-BT4-V 3D Printed Antenna — Phase Crossover Spacer Generator (v0.1.0)
+BT4-V 3D Printed Antenna — Phase Crossover Spacer Generator (v0.3.0)
 
 Generates the clip-on phase transposition spacer placed between Bay 1–2 and
 Bay 3–4 of the modular vertical spine, exported as 'stl/BT4V_Phase_Crossover.stl'.

@@ -1,5 +1,5 @@
 """
-BT4-V 3D Printed Antenna — Top Hanging Cap Generator (v0.1.0)
+BT4-V 3D Printed Antenna — Top Hanging Cap Generator (v0.3.0)
 
 Generates the top termination cap locking onto the top tenon of Whisker Bay 1,
 exported as 'stl/BT4V_Hanging_Cap.stl'. Quantity required: 1.

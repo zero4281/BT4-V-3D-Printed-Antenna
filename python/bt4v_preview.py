@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BT4-V 3D Printed Antenna — 3D Printable Parts Preview Generator (v0.1.0)
+BT4-V 3D Printed Antenna — 3D Printable Parts Preview Generator (v0.3.0)
 
 Generates the master 3D printable parts preview deliverable:
     'BT4-V Parts Preview.png' (1800 × 800 px) in the project root directory.
@@ -15,7 +15,7 @@ Technical Specifications & Requirements Baseline:
 
 Visual & Technical Content:
 1. Title banner: "BT4-V 3D PRINTED ANTENNA — 3D PRINTABLE PARTS PREVIEW",
-   Revision v0.1.0, Total Print Mass ~200 g.
+   Revision v0.3.0, Total Print Mass ~200 g.
 2. Multi-panel layout clearly showcasing all 8 printable BT4-V parts + assembly:
    - Part 1: Center Feed Hub (1 required, 40 × 24 × 70 mm, 28,500 mm³)
    - Part 2: Whisker Bay Bracket (4 required, 50 × 18 × 40 mm, 19,200 mm³)
@@ -365,17 +365,16 @@ def build_triangular_tine_spreader() -> Mesh3D:
     return m
 
 
-def build_bowtie_support_mesh() -> Mesh3D:
-    """6. Bowtie Support Strut: 65 × 10 × 8 mm, snap jaw, ribbed truss strut."""
+def build_bowtie_backing_mesh() -> Mesh3D:
+    """5. Full-Length Bowtie Backing Strut: 210 × 12 × 8 mm, continuous wire cradle, I-beam truss."""
     m = Mesh3D()
-    m.add_box(-32.5, -5, 0, 65, 10, 8, COLOR_PLASTIC_BASE, COLOR_PLASTIC_EDGE)
-    m.add_box(-30, -3, 6.5, 60, 6, 1.5, COLOR_PLASTIC_ACCENT, (140, 210, 255))
-    m.add_box(-30, -3, 0, 60, 6, 1.5, (38, 85, 145), (100, 175, 240))
-    m.add_box(25, -5, 0, 7.5, 10, 8, COLOR_PLASTIC_ACCENT, (140, 210, 255))
-    m.add_cavity(27.5, -5.1, 1.5, 4, 10.2, 5, COLOR_CAVITY_FILL, COLOR_CAVITY_EDGE, bias=-6.0)
-    m.add_box(28.5, -6, 2.5, 2, 12, 3, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-12.0)
-    for px in [-18, -8, 2, 12]:
-        m.add_cavity(px - 2.5, -5.1, 2.0, 5, 10.2, 4, COLOR_CAVITY_FILL, COLOR_CAVITY_EDGE, bias=-4.0)
+    m.add_box(-105, -6, 0, 210, 12, 8, COLOR_PLASTIC_BASE, COLOR_PLASTIC_EDGE)
+    m.add_cavity(-102, -1.6, 5.0, 204, 3.2, 3.1, COLOR_CAVITY_FILL, COLOR_CAVITY_EDGE, bias=-6.0)
+    m.add_box(-97, -8, 5.5, 194, 16, 2.6, (38, 85, 145), (100, 175, 240), bias=-2.0)
+    m.add_box(-97, -8, -1.0, 194, 16, 2.5, (38, 85, 145), (100, 175, 240), bias=-2.0)
+    win_centers = [-78.0, -54.0, -30.0, -6.0, 18.0, 42.0, 66.0, 86.0]
+    for cx in win_centers:
+        m.add_cavity(cx - 6.0, -1.6, -1.0, 12.0, 3.2, 10.0, COLOR_CAVITY_FILL, COLOR_CAVITY_EDGE, bias=-4.0)
     return m
 
 
@@ -554,7 +553,7 @@ def draw_card(draw: ImageDraw.ImageDraw, x0: int, y0: int, width: int, height: i
 def generate_preview():
     """Generates the master 1800 x 800 pixel BT4-V parts preview PNG image."""
     print("=" * 78)
-    print("BT4-V 3D PRINTED ANTENNA — 3D PRINTABLE PARTS PREVIEW GENERATOR (v0.1.0)")
+    print("BT4-V 3D PRINTED ANTENNA — 3D PRINTABLE PARTS PREVIEW GENERATOR (v0.3.0)")
     print(f"Canvas: {CANVAS_WIDTH} × {CANVAS_HEIGHT} px  |  Target Output: {OUTPUT_PATH}")
     print("=" * 78)
 
@@ -564,12 +563,12 @@ def generate_preview():
     # 1. Top Header Banner
     draw.rectangle([(12, 6), (CANVAS_WIDTH - 12, 50)], fill=COLOR_BANNER_BG, outline=COLOR_CARD_BORDER, width=1)
     draw.text((22, 11), "BT4-V 3D PRINTED ANTENNA — 3D PRINTABLE PARTS PREVIEW", fill=COLOR_TEXT_WHITE, font=FONT_TITLE)
-    draw.text((22, 32), "Revision v0.1.0  |  Total Print Mass ~200 g (PETG/PLA)  |  8 Modular Components + Assembly  |  100% FreeCAD CSG",
+    draw.text((22, 32), "Revision v0.3.0  |  Total Print Mass ~200 g (PETG/PLA)  |  8 Modular Components + Assembly  |  100% FreeCAD CSG",
               fill=COLOR_TEXT_CYAN, font=FONT_SUBTITLE)
 
     # Top Right Badges
     badges = [
-        ("REVISION v0.1.0", COLOR_TEXT_GOLD),
+        ("REVISION v0.3.0", COLOR_TEXT_GOLD),
         ("8 PARTS + ASSEMBLY", COLOR_TEXT_GREEN),
         ("ASME Y14.5M CAD", COLOR_TEXT_BLUE)
     ]
@@ -669,85 +668,71 @@ def generate_preview():
               "2 REQUIRED", COLOR_TEXT_GREEN, "Between Bays 1–2 & Bays 3–4 (Spine Clip-On)",
               build_phase_crossover_spacer(), cam_standard, 2.15, c4_callouts, c4_bullets)
 
-    # --- CARD 5: TRIANGULAR TINE SPREADER ---
+    # --- CARD 5: FULL-LENGTH BACKING STRUT ---
     c5_callouts = [
-        ((-33, 0, 0), (10, 38), "66 mm Snap Jaws", "Matches 25.5° VHF Flare", COLOR_TEXT_BLUE),
-        ((-33, -3, 0), (320, 38), "C-Clip Lock", "2.2 mm Throat Over Wire", COLOR_TEXT_GOLD),
-        ((0, 0, 0), (10, 145), "Ribbed Truss", "<3.0 g Lightweight Mass", COLOR_TEXT_CYAN),
-        ((33, 0, 0), (320, 145), "Anti-Sag Geometry", "Preserves Planar Geometry", COLOR_TEXT_PURPLE)
+        ((-100, 0, 4), (10, 38), "Continuous Cradle", "3.2 × 3.0 mm Wire Groove", COLOR_TEXT_BLUE),
+        ((0, 0, 4), (320, 38), "I-Beam Truss Web", "Lightening Windows & Rigid Flanges", COLOR_TEXT_GOLD),
+        ((95, 0, 4), (10, 145), "Tip Terminal Cap", "Seals Outer Wire Tip", COLOR_TEXT_CYAN),
+        ((-95, 0, 4), (320, 145), "Root Interlock", "Locks into Bay Bracket Slot", COLOR_TEXT_PURPLE)
     ]
     c5_bullets = [
-        "Snaps onto extended 340 mm VHF whiskers to completely eliminate gravity droop.",
-        "Forms a rigid planar triangle across upper and lower tines of Bays 1 & 4."
+        "Runs continuously behind every V-whisker arm from bracket out to tip (210 mm span).",
+        "Permanently locks exact flare angles (32.5° UHF, 25.5° VHF) and eliminates gravity sag."
     ]
     draw_card(draw, col_x[1], row_y[1], card_w, card_h,
-              "05", "TRIANGULAR TINE SPREADER", "stl/BT4V_Whisker_Spreader.stl  •  72 × 12 × 8 mm  •  2,200 mm³",
-              "4 REQUIRED", COLOR_TEXT_GREEN, "VHF Whiskers (Bays 1 & 4) at 150 mm Radius",
-              build_triangular_tine_spreader(), cam_flat, 2.05, c5_callouts, c5_bullets)
+              "05", "FULL-LENGTH BACKING STRUT", "stl/BT4V_Bowtie_Backing.stl  •  210 × 12 × 8 mm  •  2,400 mm³",
+              "8 REQUIRED", COLOR_TEXT_GREEN, "Behind Every V-Whisker Arm (2 per bay across Bays 1–4)",
+              build_bowtie_backing_mesh(), cam_flat, 1.35, c5_callouts, c5_bullets)
 
-    # --- CARD 6: BOWTIE SUPPORT STRUT ---
+    # --- CARD 6: TOP HANGING CAP ---
     c6_callouts = [
-        ((29.5, 0, 4), (10, 38), "Snap Jaw (C-Clip)", "2.2 mm Mouth / 3.2 mm Cavity", COLOR_TEXT_BLUE),
-        ((0, 0, 4), (320, 38), "Ribbed Truss Strut", "6.0 × 3.0 mm (~2.5 g mass)", COLOR_TEXT_GOLD),
-        ((-8, 0, 4), (10, 145), "Lightening Windows", "Material & Weight Reduction", COLOR_TEXT_CYAN),
-        ((-20, 0, 4), (320, 145), "Bracket Base", "Locks into Bay Bracket Pocket", COLOR_TEXT_PURPLE)
-    ]
-    c6_bullets = [
-        "Bridges between central bay bracket and intermediate points on whisker arms.",
-        "Locks bowtie arms at exact flare angles (32.5° UHF, 25.5° VHF) preventing drift/sag."
-    ]
-    draw_card(draw, col_x[2], row_y[1], card_w, card_h,
-              "06", "BOWTIE SUPPORT STRUT", "stl/BT4V_Bowtie_Support.stl  •  65 × 10 × 8 mm  •  1,800 mm³",
-              "8 REQUIRED", COLOR_TEXT_GREEN, "Mid-Span Whisker Brackets to Arms (Bays 1–4)",
-              build_bowtie_support_mesh(), cam_standard, 2.10, c6_callouts, c6_bullets)
-
-    # --- CARD 7: TOP HANGING CAP ---
-    c7_callouts = [
         ((-15, 0, 9), (10, 38), "Dual Ø5.0 mm Eyelets", "30.0 mm C-to-C Spacing", COLOR_TEXT_BLUE),
         ((0, 0, 8), (320, 38), "Anti-Rotation Yoke", "Prevents Twisting on Window", COLOR_TEXT_GOLD),
         ((0, 0, -10), (10, 145), "Female Mortise", "Mates to Bay 1 Tenon", COLOR_TEXT_CYAN),
         ((0, -9, -10), (320, 145), "Cross-Pin Hole", "Ø2.6 mm Retention Pin", COLOR_TEXT_PURPLE)
     ]
-    c7_bullets = [
+    c6_bullets = [
         "Terminates top of antenna spine and provides dual suspension anchor points.",
         "Dual 30 mm eyelet spread eliminates twisting against window glass surfaces."
     ]
-    draw_card(draw, col_x[0], row_y[2], card_w, card_h,
-              "07", "TOP HANGING CAP", "stl/BT4V_Hanging_Cap.stl  •  44 × 18 × 30 mm  •  7,400 mm³",
+    draw_card(draw, col_x[2], row_y[1], card_w, card_h,
+              "06", "TOP HANGING CAP", "stl/BT4V_Hanging_Cap.stl  •  44 × 18 × 30 mm  •  7,400 mm³",
               "1 REQUIRED", COLOR_TEXT_GREEN, "Top Spine Termination (Mates to Bay 1 Tenon)",
-              build_top_hanging_cap(), cam_standard, 2.15, c7_callouts, c7_bullets)
+              build_top_hanging_cap(), cam_standard, 2.15, c6_callouts, c6_bullets)
 
-    # --- CARD 8: FIT CALIBRATION COUPON ---
-    c8_callouts = [
+    # --- CARD 7: FIT CALIBRATION COUPON ---
+    c7_callouts = [
         ((-24, 0, 2), (10, 38), "12 AWG Friction Slots", "2.8 to 3.4 mm Test Widths", COLOR_TEXT_BLUE),
         ((-7, 0, 2), (320, 38), "Snap Cavities", "2.2 & 2.4 mm Throats", COLOR_TEXT_GOLD),
         ((9, 0, 3), (10, 155), "M4 Pocket Stack", "4.3 mm Hole & 7.2 mm Nut Hex", COLOR_TEXT_CYAN),
         ((31, -14, 5), (320, 155), "Joint & Balun Studs", "Sample Tenon & 25 mm Pitch", COLOR_TEXT_PURPLE)
     ]
-    c8_bullets = [
+    c7_bullets = [
         "CRITICAL: Print first to verify slicer extrusion tolerances before production parts.",
         "Tests wire snap retention, M4 captured hex nuts, and tenon/mortise fit."
     ]
-    draw_card(draw, col_x[1], row_y[2], card_w, card_h,
-              "08", "FIT CALIBRATION COUPON", "stl/BT4V_Fit_Coupon.stl  •  90 × 50 × 10 mm  •  26,500 mm³",
+    draw_card(draw, col_x[0], row_y[2], card_w, card_h,
+              "07", "FIT CALIBRATION COUPON", "stl/BT4V_Fit_Coupon.stl  •  90 × 50 × 10 mm  •  26,500 mm³",
               "PRINT FIRST", COLOR_TEXT_GOLD, "Pre-Print Calibration & Tolerance Bench Test",
-              build_fit_calibration_coupon(), cam_flat, 1.60, c8_callouts, c8_bullets)
+              build_fit_calibration_coupon(), cam_flat, 1.60, c7_callouts, c7_bullets)
 
-    # --- CARD 9: MODULAR SPINE ASSEMBLY ---
-    c9_callouts = [
+    # --- CARD 8: MODULAR SPINE ASSEMBLY ---
+    c8_callouts = [
         ((0, 0, 65), (10, 38), "Top Suspension Cap", "Hangs via Dual Ø5 mm Eyelets", COLOR_TEXT_BLUE),
         ((0, 0, 46), (320, 38), "4-Bay Bowtie Array", "VHF (1 & 4) & UHF (2 & 3)", COLOR_TEXT_GOLD),
         ((0, -5, -8), (10, 145), "Center Feed Hub", "RCA VH101R Balun at Z = 0 mm", COLOR_TEXT_CYAN),
         ((0, -4, 34), (320, 145), "Transposition Spacers", "2 × 180° Crossovers on Phase Bus", COLOR_TEXT_PURPLE)
     ]
-    c9_bullets = [
+    c8_bullets = [
         "10 modular joints locked with 2.5 mm cross-pins into a 560 mm rigid spine.",
         "Exact 130 mm bay pitch maintains optimum VHF-Hi & UHF collinear array gain."
     ]
-    draw_card(draw, col_x[2], row_y[2], card_w, card_h,
-              "09", "MODULAR SPINE ASSEMBLY", "Complete Antenna Backbone  •  560 mm Height  •  ~200 g Set",
+    # Spanning across columns 1 and 2 (width = 1175 px)
+    assembly_w = 1175
+    draw_card(draw, col_x[1], row_y[2], assembly_w, card_h,
+              "08", "MODULAR SPINE ASSEMBLY", "Complete Antenna Backbone  •  560 mm Height  •  ~200 g Set",
               "17 PIECES TOTAL", COLOR_TEXT_PURPLE, "Full Modular Backbone & Array Architecture",
-              build_spine_assembly_stack(), cam_standard, 1.15, c9_callouts, c9_bullets)
+              build_spine_assembly_stack(), cam_standard, 1.15, c8_callouts, c8_bullets)
 
     # Save deliverable PNG
     img.save(OUTPUT_PATH, format="PNG", optimize=True)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BT4-V 3D Printed Antenna — 2D Technical Drawing Generator (v0.1.0)
+BT4-V 3D Printed Antenna — 2D Technical Drawing Generator (v0.3.0)
 
 Generates the master engineering 2D technical drawing deliverable:
     'BT4-V 2D Drawing.png' (2200 × 1500 px) in the project root directory.
@@ -49,7 +49,7 @@ Drawing Content:
    - Wire fabrication, bending templates, droop mitigation
    - Balun installation and window mounting spacing (≥0.5 m from metal insect screens)
 7. Formal Engineering Title Block:
-   - Revision v0.1.0, Scale, Date, Author, Third-Angle Projection symbol, L1 verification badge.
+   - Revision v0.3.0, Scale, Date, Author, Third-Angle Projection symbol, L1 verification badge.
 
 Usage:
     python3 python/bt4v_drawing.py
@@ -415,7 +415,7 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     draw.rectangle(banner_box, fill=(7, 21, 44), outline=COLOR_PANEL_BORDER, width=1)
 
     title_text = "BT4-V 3D PRINTED INDOOR WINDOW TV ANTENNA — 2D TECHNICAL SPECIFICATION"
-    sub_text = "4-BAY HYBRID BOWTIE + EXTENDED VHF-HI RESONATORS  |  MODULAR SPINE & COMMERCIAL BALUN INTEGRATION  |  REV v0.1.0"
+    sub_text = "4-BAY HYBRID BOWTIE + EXTENDED VHF-HI RESONATORS  |  MODULAR SPINE & COMMERCIAL BALUN INTEGRATION  |  REV v0.3.0"
     draw.text((50, 44), title_text, fill=COLOR_TEXT_WHITE, font=FONT_MAIN_TITLE)
     draw.text((52, 72), sub_text, fill=COLOR_TEXT_CYAN, font=FONT_MAIN_SUB)
 
@@ -582,18 +582,18 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
         draw.line([(pl_x2, y_apex), (pl_x2 + dx, y_apex + dy)], fill=COLOR_COPPER, width=3)
         draw.ellipse([pl_x2 - 3, y_apex - 3, pl_x2 + 3, y_apex + 3], fill=COLOR_COPPER)
 
-        # Mid-span bowtie support struts (BT4V_Bowtie_Support.stl): 2 per bay connecting bracket to arms
-        t_sup = 0.588 if is_vhf else 0.50
+        # Continuous backing struts (BT4V_Bowtie_Backing.stl): 2 per bay running continuously along upper and lower arms
         for sign in [-1, 1]:
-            bracket_edge_x = X_CENTER + sign * (bw - 3 * SCALE)
-            outer_sup_x = (pl_x1 if sign == -1 else pl_x2) + sign * (dx * t_sup)
-            outer_sup_y_up = y_apex - dy * t_sup
-            outer_sup_y_dn = y_apex + dy * t_sup
-            for sup_y in [outer_sup_y_up, outer_sup_y_dn]:
-                in_pt = (bracket_edge_x, y_apex + (4 * SCALE if sup_y > y_apex else -4 * SCALE))
-                out_pt = (outer_sup_x, sup_y)
-                draw.line([in_pt, out_pt], fill=COLOR_PLASTIC_FILL, width=4)
-                draw.line([in_pt, out_pt], fill=COLOR_PLASTIC_OUTLINE, width=1)
+            root_x = X_CENTER + sign * (bw - 2 * SCALE)
+            tip_x = (pl_x1 if sign == -1 else pl_x2) + sign * (dx * 0.96)
+            tip_y_up = y_apex - dy * 0.96
+            tip_y_dn = y_apex + dy * 0.96
+            # Upper arm backing strut
+            draw.line([(root_x, y_apex - 2 * SCALE), (tip_x, tip_y_up - 2 * SCALE)], fill=COLOR_PLASTIC_FILL, width=5)
+            draw.line([(root_x, y_apex - 2 * SCALE), (tip_x, tip_y_up - 2 * SCALE)], fill=COLOR_PLASTIC_OUTLINE, width=1)
+            # Lower arm backing strut
+            draw.line([(root_x, y_apex + 2 * SCALE), (tip_x, tip_y_dn + 2 * SCALE)], fill=COLOR_PLASTIC_FILL, width=5)
+            draw.line([(root_x, y_apex + 2 * SCALE), (tip_x, tip_y_dn + 2 * SCALE)], fill=COLOR_PLASTIC_OUTLINE, width=1)
 
         if is_vhf:
             for sign in [-1, 1]:
@@ -687,12 +687,12 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
                         spreader_r_x + 35, spreader_r_y - 25, spreader_r_x + 230,
                         ["TRIANGULAR TINE SPREADER", "R = 150 mm (DROOP MITIGATION)"])
 
-    # Mid-Span Bowtie Support Strut (pointing to left upper support strut on Bay 1)
-    sup_call_x = pl_x1 - vhf_dx * 0.588 * 0.5
-    sup_call_y = y_bay1 - vhf_dy * 0.588 * 0.5
+    # Full-Length Backing Strut (pointing to upper left backing strut on Bay 1)
+    sup_call_x = pl_x1 - vhf_dx * 0.5
+    sup_call_y = y_bay1 - vhf_dy * 0.5
     draw_leader_callout(draw, sup_call_x, sup_call_y,
                         sup_call_x - 35, sup_call_y - 30, sup_call_x - 225,
-                        ["MID-SPAN BOWTIE SUPPORT STRUT", "BT4V_Bowtie_Support.stl (65×10×8 mm)", "QTY: 8 (2 PER BAY) | VOL: 1,800 mm³"])
+                        ["FULL-LENGTH BACKING STRUT", "BT4V_Bowtie_Backing.stl (210×12×8 mm)", "QTY: 8 (2 PER BAY) | VOL: 2,400 mm³"])
 
     # Phase Crossover 1 (pointing to Crossover 1 from the left)
     draw_leader_callout(draw, X_CENTER - xow, y_xo1,
@@ -913,10 +913,9 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
         ["Whisker Bay Bracket", "BT4V_Bay_Bracket.stl", "4", "50.0 x 18.0 x 40.0 mm", "19,200 mm³"],
         ["Modular Spine Segment", "BT4V_Spine_Segment.stl", "4", "20.0 x 14.0 x 120.0 mm", "16,800 mm³"],
         ["Phase Crossover Spacer", "BT4V_Phase_Crossover.stl", "2", "35.0 x 12.0 x 30.0 mm", "6,100 mm³"],
-        ["Triangular Tine Spreader", "BT4V_Whisker_Spreader.stl", "4", "72.0 x 12.0 x 8.0 mm", "2,200 mm³"],
-        ["Bowtie Support Strut", "BT4V_Bowtie_Support.stl", "8", "65.0 x 10.0 x 8.0 mm", "1,800 mm³"],
+        ["Full-Length Backing Strut", "BT4V_Bowtie_Backing.stl", "8", "210.0 x 12.0 x 8.0 mm", "2,400 mm³"],
         ["Top Hanging Cap", "BT4V_Hanging_Cap.stl", "1", "44.0 x 18.0 x 30.0 mm", "7,400 mm³"],
-        ["Fit Calibration Coupon", "BT4V_Fit_Coupon.stl", "1", "50.0 x 30.0 x 15.0 mm", "12,000 mm³"]
+        ["Fit Calibration Coupon", "BT4V_Fit_Coupon.stl", "1", "90.0 x 50.0 x 10.0 mm", "26,500 mm³"]
     ]
     tbl2c_align = ['left', 'left', 'center', 'center', 'right']
     draw_table(draw, 1494, 642 + tbl2a_h + 28 + tbl2b_h + 28, tbl2c_widths, tbl2c_headers, tbl2c_rows,
@@ -941,7 +940,7 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     draw.text((1502, 1190), "DWG-BT4V-001", fill=COLOR_TEXT_WHITE, font=FONT_BOLD)
 
     draw.text((1502, 1215), "REVISION:", fill=COLOR_TEXT_MUTED, font=FONT_SMALL)
-    draw.text((1502, 1230), "v0.1.0 (INITIAL RELEASE)", fill=COLOR_TEXT_GOLD, font=FONT_BOLD)
+    draw.text((1502, 1230), "v0.3.0 (INITIAL RELEASE)", fill=COLOR_TEXT_GOLD, font=FONT_BOLD)
 
     draw.text((1502, 1255), "SYSTEM SHEET:", fill=COLOR_TEXT_MUTED, font=FONT_SMALL)
     draw.text((1502, 1270), "SHEET 1 OF 1 (COMPLETE)", fill=COLOR_TEXT_WHITE, font=FONT_BOLD)
