@@ -119,7 +119,7 @@ In accordance with `./Testing Strategy.md`, there is **no unit-test framework an
   - [x] Implement `bt4v_generate_all.sh` with `set -euo pipefail` and directory self-resolution.
   - [x] Verify headless execution under both `FREECAD_CMD=freecadcmd` and `FREECAD_CMD=/snap/bin/freecad.cmd`.
   - [x] Verify clean directory generation (`mkdir -p stl`).
-  - [x] Confirm all 7 STLs and 2 PNGs are built with exit code `0` and terminal confirmation `Done.`.
+  - [x] Confirm all 8 STLs and 2 PNGs are built with exit code `0` and terminal confirmation `Done.`.
 - [x] **T1.5 — Determinism & Sandbox Execution:**
   - [x] Verify byte-for-byte or geometric determinism across repeated fresh sandbox builds.
   - [x] Confirm build runs cleanly from foreign working directories.

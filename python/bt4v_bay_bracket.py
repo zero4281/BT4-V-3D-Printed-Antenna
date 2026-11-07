@@ -89,7 +89,12 @@ APEX_ROUND_R = 4.5  # Rounded lead-in radius at whisker apex
 REAR_POCKET_W = 10.0  # Central rear lightening pocket width in X (X: -5.0 to +5.0)
 REAR_POCKET_Z0 = 11.0  # Lower Z (above mortise ceiling at 10.0 mm)
 REAR_POCKET_ZH = 14.0  # Height in Z (to Z = 25.0 mm)
-REAR_POCKET_D = 4.916  # Depth of rear lightening pocket (calibrated for 19,200 mm^3)
+REAR_POCKET_D = 2.139  # Depth of rear lightening pocket (calibrated for 19,200 mm^3)
+
+# Support mounting slot parameters
+SUPP_SLOT_W = 4.1  # Depth of support mounting slot in X
+SUPP_SLOT_Y = 6.0  # Width of support mounting slot in Y
+SUPP_SLOT_H = 8.0  # Height of support mounting slot in Z (Z: 16.0 to 24.0)
 
 
 # --------------------------------------------------------------------------
@@ -259,6 +264,22 @@ def build_bay_bracket():
             App.Vector(-REAR_POCKET_W / 2.0, -BODY_Y / 2.0, REAR_POCKET_Z0),
         )
     )
+
+    # 13. Support strut inner attachment mounting slots / pockets (Z: 16.0 to 24.0 mm)
+    supp_slot_l = Part.makeBox(
+        SUPP_SLOT_W,
+        SUPP_SLOT_Y,
+        SUPP_SLOT_H,
+        App.Vector(-25.1, -SUPP_SLOT_Y / 2.0, TERM_Z - SUPP_SLOT_H / 2.0),
+    )
+    supp_slot_r = Part.makeBox(
+        SUPP_SLOT_W,
+        SUPP_SLOT_Y,
+        SUPP_SLOT_H,
+        App.Vector(BODY_X / 2.0 - SUPP_SLOT_W, -SUPP_SLOT_Y / 2.0, TERM_Z - SUPP_SLOT_H / 2.0),
+    )
+    cutters.append(supp_slot_l)
+    cutters.append(supp_slot_r)
 
     # Apply all cuts
     for cutter in cutters:

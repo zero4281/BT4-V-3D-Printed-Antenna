@@ -2,7 +2,7 @@
 # ==============================================================================
 # BT4-V 3D Printed Antenna — Headless Master Build Orchestrator
 #
-# Generates all 7 STL production models and 2 PNG deliverables in strict
+# Generates all 8 STL assets and 2 PNG deliverables in strict
 # sequence, enforcing solid validity and geometry constraints per
 # Requirements.md (§13, §16.3) and Plan.md (§3.1, T1.4).
 #
@@ -78,6 +78,7 @@ CAD_GENERATORS=(
     "python/bt4v_spine_segment.py:stl/BT4V_Spine_Segment.stl"
     "python/bt4v_phase_crossover.py:stl/BT4V_Phase_Crossover.stl"
     "python/bt4v_whisker_spreader.py:stl/BT4V_Whisker_Spreader.stl"
+    "python/bt4v_bowtie_support.py:stl/BT4V_Bowtie_Support.stl"
     "python/bt4v_hanging_cap.py:stl/BT4V_Hanging_Cap.stl"
     "python/bt4v_fit_coupon.py:stl/BT4V_Fit_Coupon.stl"
 )
@@ -123,7 +124,7 @@ done
 # ------------------------------------------------------------------------------
 echo ""
 echo "================================================================================"
-echo "BT4-V Build Summary: All 9 artifacts generated successfully"
+echo "BT4-V Build Summary: All 10 artifacts generated successfully"
 echo "================================================================================"
 ARTIFACTS=(
     "stl/BT4V_Center_Feed.stl"
@@ -131,6 +132,7 @@ ARTIFACTS=(
     "stl/BT4V_Spine_Segment.stl"
     "stl/BT4V_Phase_Crossover.stl"
     "stl/BT4V_Whisker_Spreader.stl"
+    "stl/BT4V_Bowtie_Support.stl"
     "stl/BT4V_Hanging_Cap.stl"
     "stl/BT4V_Fit_Coupon.stl"
     "BT4-V 2D Drawing.png"
