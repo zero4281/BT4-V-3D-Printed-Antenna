@@ -77,10 +77,9 @@ CAD_GENERATORS=(
     "python/bt4v_bay_bracket.py:stl/BT4V_Bay_Bracket.stl"
     "python/bt4v_spine_segment.py:stl/BT4V_Spine_Segment.stl"
     "python/bt4v_phase_crossover.py:stl/BT4V_Phase_Crossover.stl"
-    "python/bt4v_whisker_spreader.py:stl/BT4V_Whisker_Spreader.stl"
-    "python/bt4v_bowtie_support.py:stl/BT4V_Bowtie_Support.stl"
     "python/bt4v_hanging_cap.py:stl/BT4V_Hanging_Cap.stl"
     "python/bt4v_fit_coupon.py:stl/BT4V_Fit_Coupon.stl"
+    "python/bt4v_bowtie_backing.py:stl/BT4V_Bowtie_Backing.stl"
 )
 
 for entry in "${CAD_GENERATORS[@]}"; do
@@ -124,17 +123,16 @@ done
 # ------------------------------------------------------------------------------
 echo ""
 echo "================================================================================"
-echo "BT4-V Build Summary: All 10 artifacts generated successfully"
+echo "BT4-V Build Summary: All 9 artifacts generated successfully"
 echo "================================================================================"
 ARTIFACTS=(
     "stl/BT4V_Center_Feed.stl"
     "stl/BT4V_Bay_Bracket.stl"
     "stl/BT4V_Spine_Segment.stl"
     "stl/BT4V_Phase_Crossover.stl"
-    "stl/BT4V_Whisker_Spreader.stl"
-    "stl/BT4V_Bowtie_Support.stl"
     "stl/BT4V_Hanging_Cap.stl"
     "stl/BT4V_Fit_Coupon.stl"
+    "stl/BT4V_Bowtie_Backing.stl"
     "BT4-V 2D Drawing.png"
     "BT4-V Parts Preview.png"
 )

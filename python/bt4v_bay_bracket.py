@@ -1,5 +1,5 @@
 """
-BT4-V 3D Printed Antenna — Whisker Bay Bracket Generator (v0.1.0)
+BT4-V 3D Printed Antenna — Whisker Bay Bracket Generator (v0.3.0)
 
 Generates the whisker mounting bracket used at each of the four bays
 (Bays 1, 2, 3, and 4) along the modular vertical spine, exported as

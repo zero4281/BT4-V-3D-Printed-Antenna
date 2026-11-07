@@ -1,5 +1,5 @@
 """
-BT4-V 3D Printed Antenna — Center Feed Hub Generator (v0.1.0)
+BT4-V 3D Printed Antenna — Center Feed Hub Generator (v0.3.0)
 
 Generates the central structural and electrical hub located between Bay 2 and
 Bay 3 of the modular vertical spine, exported as 'stl/BT4V_Center_Feed.stl'.

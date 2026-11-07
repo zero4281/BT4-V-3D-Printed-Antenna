@@ -1,5 +1,5 @@
 """
-BT4-V 3D Printed Antenna — Fit Calibration Coupon Generator (v0.1.0)
+BT4-V 3D Printed Antenna — Fit Calibration Coupon Generator (v0.3.0)
 
 Generates a pre-print calibration and fit-test coupon, exported as
 'stl/BT4V_Fit_Coupon.stl'. Printed first to verify printer dimensional accuracy
@@ -24,8 +24,9 @@ Mechanical & RF Fit-Test Features:
    - Female mortise: 12.0 mm (W) x 8.0 mm (D) x 10.0 mm (L) socket with 2.6 mm cross-pin hole.
 5. Balun Lug Spacing: 25.0 mm pitch test studs (OD 4.0 mm) with concentric pilot holes located in a
    recessed deck for testing direct spade lug alignment of the RCA VH101R matching transformer.
-6. Support Strut Snap Jaws & Mounting Slot: Dedicated 4.1 x 6.0 mm test mounting pocket and snap-fit test
-   features for verifying bt4v_bowtie_support.py mid-span support strut snap-jaw retention and mounting fit.
+6. Backing Strut Snap Jaws & Cradle Channel: Dedicated test pocket and snap-fit test
+   features for verifying bt4v_bowtie_backing.py full-length backing strut snap-jaw retention,
+   root mounting slot, and 3.2 x 3.0 mm cradle channel wire fit.
 
 Run headless:
     /snap/bin/freecad.cmd -c python/bt4v_fit_coupon.py
@@ -359,14 +360,14 @@ def build_fit_coupon():
     cutters.append(stud1_hole)
     cutters.append(stud2_hole)
 
-    # 7.5 Support strut snap-jaw & mounting slot test pocket (4.1 x 6.0 mm x 3.5 mm deep)
-    support_test_pocket = Part.makeBox(
+    # 7.5 Backing strut snap-jaw & mounting slot test pocket (4.1 x 6.0 mm x 3.5 mm deep)
+    backing_test_pocket = Part.makeBox(
         4.1,
         6.0,
         3.5 + 0.1,
         App.Vector(-34.0 - 2.05, -14.0 - 3.0, BODY_Z - 3.5),
     )
-    cutters.append(support_test_pocket)
+    cutters.append(backing_test_pocket)
 
     # 8. Top face identification and weight-relief recess panels
     top_label_recess = Part.makeBox(

@@ -1,6 +1,6 @@
 # BT4-V 3D Printed Antenna — 4-Bay Bowtie + VHF-High
 
-**Version:** 0.1.0  
+**Version:** 0.3.0  
 **Project:** BT4-V 3D Printed Antenna  
 **Primary Output:** FreeCAD-generated STL parts, 2D technical drawing, and part preview rendering  
 
@@ -14,10 +14,10 @@ The antenna combines:
 - **Four co-phased bowtie bays** arranged vertically along a modular 3D-printed spine.
 - **Strictly horizontal polarisation (0° tilt across all elements)**, eliminating cross-polarisation loss.
 - **Dual-band coverage:** The inner two bays (Bays 2 and 3) are tuned for high-gain broadband UHF reception (470–608 MHz, channels 14–36), while the outer two bays (Bays 1 and 4, top and bottom) feature extended whiskers tuned for VHF-High reception (174–216 MHz, channels 7–13).
-- **Triangular Tine Spreaders:** Lightweight 3D-printed spreader clips bridge the extended VHF whisker tines into rigid truss triangles, eliminating gravity droop without heavy cantilever spars.
+- **Full-Length Bowtie Backing Struts:** Continuous 3D-printed snap-fit backing struts running from bay bracket root to wire tip, permanently locking exact flare angles (32.5° UHF, 25.5° VHF) and completely eliminating gravity sag, droop, or vibration.
 - **RCA VH101R Matching Transformer Integration:** A commercial 300:75 Ω outdoor matching transformer (4:1 balun) mounts directly to the center feed bracket via its screw lugs, providing a female F-connector output for direct 75 Ω RG6 coaxial feed to the television.
 
-BT4-V delivers +6 to +8 dBi forward gain across UHF and +3 to +4 dBi across VHF-High in an ultra-lightweight (~200 g), flat, modular form factor fitting a standard window (<600 mm height).
+BT4-V delivers +6 to +8 dBi forward gain across UHF and +3 to +4 dBi across VHF-High in an ultra-lightweight (~210 g), flat, modular form factor fitting a standard window (<600 mm height).
 
 ---
 
@@ -42,7 +42,7 @@ BT4-V-Antenna/
 │   ├── bt4v_bay_bracket.py       # Whisker mounting bracket (Bays 1–4)
 │   ├── bt4v_spine_segment.py     # Interlocking modular vertical spine struts
 │   ├── bt4v_phase_crossover.py   # Phase-line crossover insulator / guide
-│   ├── bt4v_whisker_spreader.py  # Triangular tine spreader for VHF whiskers
+│   ├── bt4v_bowtie_backing.py    # Full-length bowtie backing strut
 │   ├── bt4v_hanging_cap.py       # Top hanging cap with suspension eyelets
 │   ├── bt4v_fit_coupon.py        # Pre-print tolerance and snap-fit coupon
 │   ├── bt4v_drawing.py           # 2D technical drawing generator (Pillow)
@@ -53,7 +53,7 @@ BT4-V-Antenna/
     ├── BT4V_Bay_Bracket.stl
     ├── BT4V_Spine_Segment.stl
     ├── BT4V_Phase_Crossover.stl
-    ├── BT4V_Whisker_Spreader.stl
+    ├── BT4V_Bowtie_Backing.stl
     ├── BT4V_Hanging_Cap.stl
     └── BT4V_Fit_Coupon.stl
 ```
@@ -96,6 +96,7 @@ FREECAD_CMD=freecadcmd ./bt4v_generate_all.sh
 - `Plan.md`: Implementation status and task tracking.
 - `Testing Strategy.md`: Verification procedures and build regression criteria.
 - `BT4-V BOM.md`: Complete bill of materials, fasteners, and print settings.
+- `Update.md`: Gap assessment and migration tracking.
 
 ---
 

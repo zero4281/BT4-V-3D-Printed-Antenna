@@ -1,5 +1,5 @@
 """
-BT4-V 3D Printed Antenna — Spine Segment Generator (v0.1.0)
+BT4-V 3D Printed Antenna — Spine Segment Generator (v0.3.0)
 
 Generates the modular vertical spine strut that spaces adjacent bay brackets
 at the exact 130 mm pitch along the modular vertical spine, exported as
