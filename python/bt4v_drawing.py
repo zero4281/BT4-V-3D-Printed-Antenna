@@ -582,6 +582,19 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
         draw.line([(pl_x2, y_apex), (pl_x2 + dx, y_apex + dy)], fill=COLOR_COPPER, width=3)
         draw.ellipse([pl_x2 - 3, y_apex - 3, pl_x2 + 3, y_apex + 3], fill=COLOR_COPPER)
 
+        # Mid-span bowtie support struts (BT4V_Bowtie_Support.stl): 2 per bay connecting bracket to arms
+        t_sup = 0.588 if is_vhf else 0.50
+        for sign in [-1, 1]:
+            bracket_edge_x = X_CENTER + sign * (bw - 3 * SCALE)
+            outer_sup_x = (pl_x1 if sign == -1 else pl_x2) + sign * (dx * t_sup)
+            outer_sup_y_up = y_apex - dy * t_sup
+            outer_sup_y_dn = y_apex + dy * t_sup
+            for sup_y in [outer_sup_y_up, outer_sup_y_dn]:
+                in_pt = (bracket_edge_x, y_apex + (4 * SCALE if sup_y > y_apex else -4 * SCALE))
+                out_pt = (outer_sup_x, sup_y)
+                draw.line([in_pt, out_pt], fill=COLOR_PLASTIC_FILL, width=4)
+                draw.line([in_pt, out_pt], fill=COLOR_PLASTIC_OUTLINE, width=1)
+
         if is_vhf:
             for sign in [-1, 1]:
                 apex_x = pl_x1 if sign == -1 else pl_x2
@@ -673,6 +686,13 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     draw_leader_callout(draw, spreader_r_x, spreader_r_y,
                         spreader_r_x + 35, spreader_r_y - 25, spreader_r_x + 230,
                         ["TRIANGULAR TINE SPREADER", "R = 150 mm (DROOP MITIGATION)"])
+
+    # Mid-Span Bowtie Support Strut (pointing to left upper support strut on Bay 1)
+    sup_call_x = pl_x1 - vhf_dx * 0.588 * 0.5
+    sup_call_y = y_bay1 - vhf_dy * 0.588 * 0.5
+    draw_leader_callout(draw, sup_call_x, sup_call_y,
+                        sup_call_x - 35, sup_call_y - 30, sup_call_x - 225,
+                        ["MID-SPAN BOWTIE SUPPORT STRUT", "BT4V_Bowtie_Support.stl (65×10×8 mm)", "QTY: 8 (2 PER BAY) | VOL: 1,800 mm³"])
 
     # Phase Crossover 1 (pointing to Crossover 1 from the left)
     draw_leader_callout(draw, X_CENTER - xow, y_xo1,
@@ -894,6 +914,7 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
         ["Modular Spine Segment", "BT4V_Spine_Segment.stl", "4", "20.0 x 14.0 x 120.0 mm", "16,800 mm³"],
         ["Phase Crossover Spacer", "BT4V_Phase_Crossover.stl", "2", "35.0 x 12.0 x 30.0 mm", "6,100 mm³"],
         ["Triangular Tine Spreader", "BT4V_Whisker_Spreader.stl", "4", "72.0 x 12.0 x 8.0 mm", "2,200 mm³"],
+        ["Bowtie Support Strut", "BT4V_Bowtie_Support.stl", "8", "65.0 x 10.0 x 8.0 mm", "1,800 mm³"],
         ["Top Hanging Cap", "BT4V_Hanging_Cap.stl", "1", "44.0 x 18.0 x 30.0 mm", "7,400 mm³"],
         ["Fit Calibration Coupon", "BT4V_Fit_Coupon.stl", "1", "50.0 x 30.0 x 15.0 mm", "12,000 mm³"]
     ]
