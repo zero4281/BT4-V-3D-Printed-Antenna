@@ -1,86 +1,78 @@
-# BT4-V 3D Printed Antenna — Technical Gap Assessment
+# BT4-V 3D Printed Antenna — Gap Assessment (`Update.md`)
 
-**Target Baseline:** BT4-V v0.1.0 (November 2026)  
-**Current Codebase Baseline:** BT4-V v0.1.0 (Automated CAD Generators, Build Pipeline, and Layer 2 Physical Acceptance Testing T2.1–T2.4 Complete)  
-**Assessment Date:** November 2026  
+- **Project:** BT4-V 3D Printed Antenna (4-Bay Bowtie + VHF-High Array)
+- **Authoritative Baseline:** `Requirements.md` v0.3.0 (November 2026)
+- **Plan Baseline:** `Plan.md` v0.3.0 (excluding Section 3 Testing & Verification)
+- **Previous `Update.md` Baseline:** v0.1.0 (multi-revision jump: `0.1.0` -> `0.2.0` -> `0.3.0`)
 
 ---
 
-## 1. Summary of Required Alignment
+## 1. Summary
 
-### 1.1 Multi-Revision Architectural Pivot Overview
-The project has successfully completed the major multi-revision architectural pivot from legacy **M5FD v0.3.1** (Mankato 5-Channel Fan Dipole) to **BT4-V v0.1.0** (4-Bay Stacked Bowtie Array with VHF-High Extensions), as specified in `Requirements.md` §18 and `Plan.md` §1–§2.
+This gap assessment evaluates the repository against `Requirements.md` **v0.3.0** and the non-testing sections of `Plan.md` **v0.3.0** (§1, §2, §4–§7), processing the complete multi-revision jump from the previous `Update.md` baseline (**`0.1.0` -> `0.2.0` -> `0.3.0`**):
 
-This structural and electromagnetic transition comprises:
-- **Topology & Gain:** Replaces radial coplanar fan dipoles with a vertically stacked 4-bay bowtie array (130 mm bay pitch, 390 mm active span, ~560 mm overall height), achieving +6 to +8 dBi forward gain on UHF (470–608 MHz, channels 14–36) and +3 to +4 dBi on VHF-High (174–216 MHz, channels 7–13).
-- **Polarisation Alignment:** Replaces off-axis radial fan elements (up to ±65° tilt) with strictly horizontal polarisation (0° tilt across all elements in the X-Z plane), eliminating cross-polarisation losses (0 dB loss).
-- **Feedpoint & Balun Matching:** Eliminates the custom hand-wound 1:1 dual-toroid choke balun and hand-soldered star bus. Replaces them with a commercial **RCA VH101R** 4:1 (300:75 Ω) outdoor matching transformer cradled directly in a modular Center Feed Hub with downward 75 Ω RG6 female F-connector output and 25 mm pitch M4 feed stud connections.
-- **Whisker Geometry & Droop Mitigation:** Replaces heavy cantilevered spars with 8 self-supporting bent 12 AWG solid copper V-whiskers. Bays 1 & 4 (VHF-High) utilize 340 mm arms (25.5° flare angle, ~680 mm tip-to-tip span); Bays 2 & 3 (UHF) utilize 200 mm arms (32.5° flare angle, ~400 mm tip-to-tip span). Long VHF whisker sag is eliminated via snap-on triangular tine spreaders (<3 g each) creating rigid truss triangles at 150 mm radius.
-- **Modular Spine Architecture:** Replaces the monolithic Ø150 mm disc hub with a modular vertical interlocking spine consisting of 1 Center Feed Hub, 4 Whisker Bay Brackets, 4 Spine Segments (110 mm active body length, rigid I-beam profile), and 1 Top Hanging Cap. All segments join via standard tenon/mortise sliding joints locked with 2.6 mm cross-pins.
-- **Phase Phasing & Crossover:** Replaces radial bus wires with two continuous vertical 12 AWG copper phase lines spaced 25 mm center-to-center, bridged by 2 clip-on 180° phase transposition crossover spacers maintaining ≥5.0 mm plastic/dielectric air gap isolation.
-- **Printed Mass & Complexity:** Reduces total printed mass by >60%, decreasing from ~501–660 g down to ~200 g across 7 unique printable models and 17 production parts plus fit coupon, fitting standard 235 × 235 mm build plates without supports.
+- **`v0.1.0` Baseline:** Initial 4-bay bowtie + VHF-High array (`130 mm` bay pitch, `0°` horizontal polarization, commercial RCA VH101R 4:1 balun) using localized Triangular Tine Spreaders (`python/bt4v_whisker_spreader.py` -> `stl/BT4V_Whisker_Spreader.stl`, `72 × 12 × 8 mm`, Qty 4), 4 Spine Segments (`20 × 14 × 120 mm`), and a compact Center Feed Hub (`40 × 24 × 70 mm`), totaling 17 production parts (`~200 g`).
+- **`v0.2.0` Intermediate Delta:** Introduced localized Mid-Span Bowtie Support Struts (`python/bt4v_bowtie_support.py` -> `stl/BT4V_Bowtie_Support.stl`, `65 × 10 × 8 mm`, Qty 8) alongside the 4 Triangular Tine Spreaders to assist mid-arm spacing (8 unique STLs, `~210 g`).
+- **`v0.3.0` Target Consolidation:** Replaced both `v0.1.0` Triangular Tine Spreaders and `v0.2.0` Mid-Span Bowtie Support Struts with universal interlocking **Full-Length Bowtie Backing Struts** (`python/bt4v_bowtie_backing.py` -> `stl/BT4V_Bowtie_Backing.stl`, `180.0 × 12.0 × 8.0 mm`, `2,200 mm³ ±2%`, Qty 24: 1 strut per `200 mm` UHF arm [8 pcs] and 2 daisy-chained struts per `340 mm` VHF arm [16 pcs]); unified the 8-piece vertical modular spine joined by **7 cross-pinned tenon/mortise joints** for an exact `130.0 mm` center-to-center bay pitch (`15 + 100 + 15 = 130.0 mm`, `390.0 mm` active span, `~560 mm` total height) via an enlarged Center Feed Hub (`40.0 × 24.0 × 110.0 mm`, `42,000 mm³ ±2%`, Qty 1), Spine Segments (`30.0 × 14.0 × 110.0 mm`, `21,000 mm³ ±2%`, Qty 2) with straight-through `25.0 mm` phase grooves and a `20.0 mm` mid-span crossover waist, and Whisker Bay Brackets (`50.0 × 18.0 × 40.0 mm`, `19,200 mm³ ±2%`, Qty 4) with 4 lateral wing sockets; updated the Fit Coupon (`python/bt4v_fit_coupon.py`) backing-strut socket requirement; and synchronized the build orchestrator, PNG visuals, and documentation for the **34-part (`~235 g`)** production set.
 
-All automated CAD generators, Pillow rendering pipelines, the master shell build orchestrator, and core documentation have been fully implemented, executed, and verified against nominal geometric and volume baselines.
+The active codebase has already migrated the core FreeCAD generators, master build script (`bt4v_generate_all.sh`), and primary assembly documentation (`ASSEMBLY.md`, `README.md`) to `v0.3.0`—and has already deleted the obsolete `python/bt4v_whisker_spreader.py` (`v0.1.0`) and `python/bt4v_bowtie_support.py` (`v0.2.0`) modules—leaving targeted Fit Coupon socket geometry, 2D/3D PNG visual callouts, Pillow CLI exit-code handling, BOM/tracker metadata, and repository-hygiene alignment gaps detailed below.
 
 ---
 
 ## 2. Implemented but Non-Required: Features to Remove
 
-All legacy non-required features, obsolete generators, build scripts, deliverables, and STL meshes from the discontinued M5FD v0.3.1 design have already been completely pruned from the codebase.
+*(Note: Obsolete `v0.1.0` `python/bt4v_whisker_spreader.py` / `stl/BT4V_Whisker_Spreader.stl` and `v0.2.0` `python/bt4v_bowtie_support.py` / `stl/BT4V_Bowtie_Support.stl` were already removed from the repository prior to this assessment.)*
 
-### 2.1 Pruned Legacy Artifacts
-- **Obsolete Python Generators (`python/`):** `m5fd_hub.py`, `m5fd_balun_cover.py`, `m5fd_spar_segment.py`, `m5fd_tip_cap.py`, `m5fd_fit_coupon.py`, `m5fd_drawing.py`, `m5fd_preview.py`, and stale compiled bytecode (`python/__pycache__/`).
-- **Obsolete Build Scripts & Deliverables:** `m5fd_generate_all.sh`, `M5FD 2D Drawing.png`, `M5FD Parts Preview.png`, and `M5FD BOM.md`.
-- **Obsolete STL Meshes (`stl/`):** `M5FD_Hub.stl`, `M5FD_Balun_Cover.stl`, `M5FD_Fit_Coupon.stl`, `M5FD_Tip_Cap.stl`, and all legacy spar meshes (`M5FD_Spar_*.stl`).
-
----
-
-## 3. Codebase Compliance Table
-
-The following table maps out the codebase status against core functional specifications in `Requirements.md` and non-testing sections of `Plan.md`.
-
-| Component / Specification | Requirements Baseline | Plan Baseline | Canonical Parameters & Constraints | Codebase Status |
-|---|---|---|---|---|
-| **Center Feed Hub Generator** | `Requirements.md` §5, §16.3 | `Plan.md` §1.1, §2.1, §2.2 | `python/bt4v_center_feed.py` &rarr; `stl/BT4V_Center_Feed.stl`<br>• Extents: 40.0 × 24.0 × 70.0 mm<br>• Volume: 28,500 mm³ ±2% (27,930 – 29,070 mm³)<br>• Single valid solid (`isValid() == True`)<br>• RCA VH101R cradle cavity & zip-tie slot<br>• 25 mm pitch M4 clearance holes & hex pockets<br>• 3.2 × 3.0 mm wire channels, tenon/mortise | **Completed / Verified** (Volume: 28,500.04 mm³, Exit 0) |
-| **Whisker Bay Bracket Generator** | `Requirements.md` §6, §16.3 | `Plan.md` §1.1, §2.1, §2.2 | `python/bt4v_bay_bracket.py` &rarr; `stl/BT4V_Bay_Bracket.stl`<br>• Extents: 50.0 × 18.0 × 40.0 mm<br>• Volume: 19,200 mm³ ±2% (18,816 – 19,584 mm³)<br>• Single valid solid (`isValid() == True`)<br>• Dual 25.5° (VHF) and 32.5° (UHF) V-grooves<br>• 2 × M4 clamping holes with 7.2 mm hex nut pockets<br>• Phase line channels at 25 mm pitch | **Completed / Verified** (Volume: 19,200.01 mm³, Exit 0) |
-| **Spine Segment Generator** | `Requirements.md` §7, §16.3 | `Plan.md` §1.1, §2.1, §2.2 | `python/bt4v_spine_segment.py` &rarr; `stl/BT4V_Spine_Segment.stl`<br>• Extents: 20.0 × 14.0 × 120.0 mm (110 mm active)<br>• Volume: 16,800 mm³ ±2% (16,464 – 17,136 mm³)<br>• Single valid solid (`isValid() == True`)<br>• Rigid I-beam profile, 2 × 3.2 mm wire grooves<br>• Tenon/mortise with 2.6 mm cross-pin holes | **Completed / Verified** (Volume: 16,800.00 mm³, Exit 0) |
-| **Phase Crossover Spacer Generator** | `Requirements.md` §8, §16.3 | `Plan.md` §1.1, §2.1, §2.2 | `python/bt4v_phase_crossover.py` &rarr; `stl/BT4V_Phase_Crossover.stl`<br>• Extents: 35.0 × 12.0 × 30.0 mm<br>• Volume: 6,100 mm³ ±2% (5,978 – 6,222 mm³)<br>• Single valid solid (`isValid() == True`)<br>• Diagonal crossing channels with ≥5.0 mm dielectric gap<br>• Snap-fit lip (2.4 mm mouth) to clip onto spine strut | **Completed / Verified** (Volume: 6,100.00 mm³, Exit 0) |
-| **Triangular Tine Spreader Generator** | `Requirements.md` §9, §16.3 | `Plan.md` §1.1, §2.1, §2.2 | `python/bt4v_whisker_spreader.py` &rarr; `stl/BT4V_Whisker_Spreader.stl`<br>• Extents: 72.0 × 12.0 × 8.0 mm<br>• Volume: 2,200 mm³ ±2% (2,156 – 2,244 mm³)<br>• Single valid solid (`isValid() == True`)<br>• Mass <3 g; 66.0 mm C-to-C span between jaw clips<br>• Snap-fit C-clips (2.2 mm mouth into 3.2 mm cavity) | **Completed / Verified** (Volume: 2,200.00 mm³, Exit 0) |
-| **Top Hanging Cap Generator** | `Requirements.md` §10, §16.3 | `Plan.md` §1.1, §2.1, §2.2 | `python/bt4v_hanging_cap.py` &rarr; `stl/BT4V_Hanging_Cap.stl`<br>• Extents: 44.0 × 18.0 × 30.0 mm<br>• Volume: 7,400 mm³ ±2% (7,252 – 7,548 mm³)<br>• Single valid solid (`isValid() == True`)<br>• Mortise joint mating to Bay 1 top connector<br>• 2 × Ø5.0 mm eyelets spaced 30 mm apart on X axis | **Completed / Verified** (Volume: 7,400.00 mm³, Exit 0) |
-| **Fit Calibration Coupon Generator** | `Requirements.md` §11, §16.3 | `Plan.md` §1.1, §2.1, §2.2 | `python/bt4v_fit_coupon.py` &rarr; `stl/BT4V_Fit_Coupon.stl`<br>• Extents: 90.0 × 50.0 × 10.0 mm<br>• Volume: 26,500 mm³ ±2% (25,970 – 27,030 mm³)<br>• Single valid solid (`isValid() == True`)<br>• Friction & snap channels, M4 hole/pocket, tenon/mortise | **Completed / Verified** (Volume: 26,498.65 mm³, Exit 0) |
-| **2D Technical Drawing Generator** | `Requirements.md` §12.1 | `Plan.md` §1.1, §2.1 | `python/bt4v_drawing.py` &rarr; `BT4-V 2D Drawing.png`<br>• 2200 × 1500 px Pillow output<br>• Full front view of 4 bays, whisker dimensions, phase lines<br>• Side view with RCA VH101R mounting and hanging cap<br>• Electrical performance & channel mapping table | **Completed / Verified** (2200×1500 px PNG, Exit 0) |
-| **3D Parts Preview Generator** | `Requirements.md` §12.2 | `Plan.md` §1.1, §2.1 | `python/bt4v_preview.py` &rarr; `BT4-V Parts Preview.png`<br>• 1800 × 800 px Pillow output<br>• Multi-panel rendering of all 7 BT4-V printable parts<br>• Assembly annotation labels | **Completed / Verified** (1800×800 px PNG, Exit 0) |
-| **Headless Master Build Orchestrator** | `Requirements.md` §13 | `Plan.md` §1.1, §2.1 | `bt4v_generate_all.sh`<br>• `set -euo pipefail`, POSIX bash<br>• Headless FreeCAD invocation (`FREECAD_CMD`)<br>• Sequential execution of all 7 CAD & 2 Pillow scripts<br>• Verifies output presence; exits 0 on success | **Completed / Verified** (Executes cleanly, exit 0) |
-| **Bill of Materials Documentation** | `Requirements.md` §15 | `Plan.md` §1.1 | `BT4-V BOM.md`<br>• Printed parts inventory (~200 g total)<br>• 12 AWG copper wire specs (~5.6 m total)<br>• RCA VH101R balun, M4 hardware stack | **Completed / Verified** |
-| **Project Documentation Alignment** | `Requirements.md` §1–§4 | `Plan.md` §1.1 | `README.md` & `Bugs.md`<br>• Overwritten with BT4-V v0.1.0 specifications and defect baseline | **Completed / Verified** |
+1. **Git-Tracked Generated Mesh Binaries (`stl/BT4V_Bay_Bracket.stl`, `stl/BT4V_Bowtie_Backing.stl`, `stl/BT4V_Center_Feed.stl`, `stl/BT4V_Fit_Coupon.stl`, `stl/BT4V_Hanging_Cap.stl`, `stl/BT4V_Phase_Crossover.stl`, `stl/BT4V_Spine_Segment.stl` — git index entries):**
+   - **Rationale:** `Requirements.md` §2 (line 76) explicitly specifies `stl/` as git-ignored generated output (`stl/ # Generated 3D printable meshes (git-ignored)`). Although `.gitignore` (line 11) includes `stl/`, all 7 binary STL files remain tracked in the git index and must be untracked (`git rm --cached stl/*.stl`).
+2. **Legacy `v0.1.0` "Triangular Tine Spreaders" Docstring Reference (`python/bt4v_fit_coupon.py`, lines 18–19):**
+   - **Rationale:** The module docstring still states `"verifying wire snap retention in triangular tine spreaders"`, referencing the pruned `v0.1.0` `bt4v_whisker_spreader.py` component eliminated by `Requirements.md` §9, §11.2, and §18 (`v0.3.0`).
+3. **Dead / Contradictory Spine Extension Constants (`python/bt4v_center_feed.py`, lines 98–101):**
+   - **Rationale:** Unused constants `EXT_X = 30.0`, `EXT_Z_BOT = 20.0`, and `EXT_Z_TOP = 80.0` (accompanied by comment `Z: 0..20 and Z: 80..100`) are leftover dead code contradicting the actual `Z: 0..25` and `Z: 75..100` upper/lower spine shoulder cuts implemented in `build_center_feed()` (`python/bt4v_center_feed.py`, lines 249–260).
+4. **Orphaned Scratch Bytecode Artifacts (`__pycache__/solve.cpython-312.pyc`, `__pycache__/test_coupon.cpython-312.pyc`):**
+   - **Rationale:** Leftover compiled Python bytecode files in root `__pycache__/` from deleted ad-hoc scratch scripts outside the canonical `Requirements.md` §2 repository layout.
 
 ---
 
-## 4. Immediate Next Steps for Implementation / Physical Validation
+## 3. Compliance Matrix (`Requirements.md` v0.3.0 & `Plan.md` Non-Testing Sections vs. Codebase)
 
-With all Layer 1 automated CAD generators, build orchestration scripts, rendering pipelines, and documentation fully completed and verified, the remaining scope consists exclusively of **Layer 2: Physical Human-Gated Acceptance Testing** (`T2.1` through `T2.4`):
+| Specification Area (`Requirements.md` / `Plan.md`) | Target Artifact(s) | Status | Codebase Evidence, Measured Baselines & Discrepancies |
+|---|---|---|---|
+| **Req §1, §3, §4 / Plan §2.3** — RF & Array Geometry | `python/bt4v_*.py`, `ASSEMBLY.md`, `BT4-V BOM.md` | **Compliant** | Unified `130.0 mm` center-to-center bay pitch (`15 + 100 + 15 = 130.0 mm`, `390.0 mm` active span, `~560 mm` overall height); strictly `0°` horizontal polarization in X-Z plane; `340 mm` arms / `25.5°` flare on VHF Bays 1 & 4; `200 mm` arms / `32.5°` flare on UHF Bays 2 & 3; straight-through `25.0 mm` 12 AWG phase bus; commercial RCA VH101R 4:1 (`300:75 Ω`) balun feed. |
+| **Req §2 / Plan §2.1** — Repository Layout & `.gitignore` | `.gitignore`, `python/`, `stl/`, `__pycache__/` | **Partial / Drift** | All 9 generator scripts in `python/`, `bt4v_generate_all.sh`, both root PNG deliverables, and Markdown documents match §2; `.gitignore:11` lists `stl/`, **but** all 7 `stl/BT4V_*.stl` binaries remain tracked in the git index and root `__pycache__/` retains 2 orphaned `.pyc` files (`solve.cpython-312.pyc`, `test_coupon.cpython-312.pyc`). |
+| **Req §5, §16.3 / Plan §1.1, §2.2** — Center Feed Hub | `python/bt4v_center_feed.py` -> `stl/BT4V_Center_Feed.stl` | **Compliant** | Qty 1; `40.000 × 24.000 × 110.000 mm` (`100.0 mm` active body + `10.0 mm` tenon); `42,053.92 mm³` (`+0.13%` vs `42,000 mm³ ±2%`); 1 valid solid; front (`+Y`) RCA VH101R cradle (`lines 199–227`); M4 terminal posts at `Z = 50.0 mm`; straight `25.0 mm` wire channels (`3.2 × 3.0 mm`); tenon/mortise + `Ø2.6 mm` cross-pin holes; `4.0 × 2.0 mm` zip-tie slot (`lines 94–96`). *(Minor dead constants on `lines 98–101`.)* |
+| **Req §6, §16.3 / Plan §1.1, §2.2** — Whisker Bay Bracket | `python/bt4v_bay_bracket.py` -> `stl/BT4V_Bay_Bracket.stl` | **Compliant** | Qty 4; `50.000 × 18.000 × 40.000 mm` (`30.0 mm` active body + `10.0 mm` tenon); `19,181.20 mm³` (`-0.10%` vs `19,200 mm³ ±2%`); 1 valid solid; dual `32.5°` (UHF) and `25.5°` (VHF) flare guides centered at `Z = 15.0 mm`; `2 × Ø4.3 mm` M4 clamping holes with `7.2 mm` AF × `3.5 mm` hex nut pockets; `25.0 mm` phase channels; tenon/mortise + `Ø2.6 mm` pin holes; 4 lateral `4.2 × 6.2 × 4.2 mm` backing-strut wing sockets (`lines 94–96`). |
+| **Req §7, §16.3 / Plan §1.1, §2.2** — Spine Segment | `python/bt4v_spine_segment.py` -> `stl/BT4V_Spine_Segment.stl` | **Compliant** | Qty 2; `30.000 × 14.000 × 110.000 mm` (`100.0 mm` active body + `10.0 mm` tenon); `21,181.95 mm³` (`+0.87%` vs `21,000 mm³ ±2%`); 1 valid solid; flanged I-beam profile narrowing to a `20.0 mm` mid-span crossover waist (`Z: 35..65`); straight-through `25.0 mm` phase-line grooves; tenon/mortise + `Ø2.6 mm` cross-pin holes. |
+| **Req §8, §16.3 / Plan §1.1, §2.2** — Phase Crossover Spacer | `python/bt4v_phase_crossover.py` -> `stl/BT4V_Phase_Crossover.stl` | **Compliant** | Qty 2; `35.000 × 12.000 × 30.000 mm`; `6,100.00 mm³` (`0.00%` vs `6,100 mm³ ±2%`); 1 valid solid; diagonal `3.2 mm` crossing wire channels entering/exiting at `25.0 mm` pitch; `6.0 mm` solid plastic/air dielectric bridge (`≥5.0 mm` req); `2.4 mm` snap mouth clipping onto the `20.0 mm` spine waist. *(Minor note: omits an explicit trailing `sys.exit(0)` at `line 465`, though process exits `0` implicitly.)* |
+| **Req §9, §16.3 / Plan §1.1, §2.2, §2.3** — Full-Length Bowtie Backing Strut | `python/bt4v_bowtie_backing.py` -> `stl/BT4V_Bowtie_Backing.stl` | **Compliant (Minor Docstring Drift)** | Qty 24; `180.000 × 12.000 × 8.000 mm`; `2,164.37 mm³` (`-1.62%` vs `2,200 mm³ ±2%`); 1 valid solid; continuous `2.4 mm` snap throat into `Ø3.2 mm` circular wire cavity; `4.0 × 6.0 × 4.0 mm` root male tenon (`-X`), `4.2 × 6.2 × 4.2 mm` tip female mortise (`+X`), and ribbed I-beam lightening windows. Docstring `line 13` repeats `170.0 mm + 10.0 mm tenon` prose, whereas `line 28` and CSG `lines 118–131` implement a `176.0 mm` body + `4.0 mm` root tenon (`180.0 mm` total) to mate flush with `bt4v_bay_bracket.py`'s `4.2 mm` deep wing sockets. |
+| **Req §10, §16.3 / Plan §1.1, §2.2** — Top Hanging Cap | `python/bt4v_hanging_cap.py` -> `stl/BT4V_Hanging_Cap.stl` | **Compliant** | Qty 1; `44.000 × 18.000 × 30.000 mm`; `7,400.00 mm³` (`0.00%` vs `7,400 mm³ ±2%`); 1 valid solid; bottom female mortise + `Ø2.6 mm` cross-pin hole mating to Bay 1 top tenon; `2 × Ø5.0 mm` suspension eyelets spaced `30.0 mm` apart on X. |
+| **Req §11, §16.3 / Plan §1.1, §2.2** — Fit Coupon | `python/bt4v_fit_coupon.py` -> `stl/BT4V_Fit_Coupon.stl` | **Partial / Drift** | `Plan.md` §1.1 marks status as `Completed / Verified`; overall `90.000 × 50.000 × 10.000 mm` extents, `26,497.36 mm³` volume (`-0.01%` vs `26,500 mm³ ±2%`), 1 valid solid, and features 1–5 conform, **but** feature 6 (`backing_test_pocket`, `lines 363–370`) is cut as `4.1 × 6.0 mm` (instead of the `4.2 × 6.2 × 4.2 mm` production mortise on `bt4v_bay_bracket.py:94–96` and `bt4v_bowtie_backing.py:124–131`) and overlaps `top_sw_recess` (`lines 381–387`, `Z: 8.0..10.0`), leaving only a **`1.5 mm` deep** socket instead of `4.2 mm`; docstring `lines 18–19` also retain `"triangular tine spreaders"`. |
+| **Req §12.1 / Plan §1.1, §1.2, §2.1** — 2D Technical Drawing | `python/bt4v_drawing.py` -> `BT4-V 2D Drawing.png` | **Partial / Drift** | Generates `2200 × 1500 px` PNG with `v0.3.0` front elevation, title block, and 34-part printed BOM, **but**: (1) `line 823` Table 2B lists Joint Cross-Pins Qty `"6"` instead of `"8–10"` for the **7** active spine joints required by Req §14.2 & §15; (2) `lines 701–709` View B Side Profile renders the RCA VH101R balun protruding `14 mm` behind the rear (`-Y`) face instead of seated in the front (`+Y`) cradle of `bt4v_center_feed.py:199–227`; (3) `lines 1022–1030` lack CLI flag validation exiting with code `2`. |
+| **Req §12.2 / Plan §1.1, §1.2, §2.1** — 3D Parts Preview | `python/bt4v_preview.py` -> `BT4-V Parts Preview.png` | **Partial / Drift** | Generates `1800 × 800 px` PNG rendering all 7 `v0.3.0` STL part cards plus the Modular Spine Assembly overview card, **but**: (1) `line 676` Card 08 footer states `"6 modular spine joints"` instead of `"7 modular spine joints"` per Req §14.2; (2) `lines 701–709` lack CLI flag validation exiting with code `2`. |
+| **Req §13 / Plan §1.1, §2.1** — Build Orchestrator | `bt4v_generate_all.sh` | **Compliant** | POSIX bash with `set -euo pipefail`, `FREECAD_CMD` auto-detection/override, `mkdir -p stl`, sequential execution of all 7 FreeCAD and 2 Pillow generators in exact §13.1 order, non-empty output check for all 7 STLs + 2 PNGs, and exit code `0`. |
+| **Req §14 / Plan §1.1** — Assembly Guide | `ASSEMBLY.md` | **Compliant** | Fully synchronized to `v0.3.0`: 12 AWG wire cut list, `32.5°`/`25.5°` flare bending, 24 full-length backing struts (8 UHF single + 16 VHF daisy-chained), 8-piece modular spine across 7 cross-pinned joints, 2 phase crossover spacers, M4 apex clamping, front RCA VH101R mounting + zip-tie strain relief, and window suspension guidance. |
+| **Req §2, §15 / Plan §1.1** — BOM, Overview & Issue Tracker | `BT4-V BOM.md`, `README.md`, `Bugs.md` | **Partial / Drift** | `README.md` is fully aligned with `v0.3.0`; `BT4-V BOM.md` matches all `v0.3.0` part counts, fasteners, and `~235 g` mass, **except** `line 21` sums Total Nominal Volume as `~189,000 mm³` instead of the exact `233,200 mm³` (`42,000 + 4×19,200 + 2×21,000 + 2×6,100 + 24×2,200 + 7,400`); `Bugs.md` (`lines 3–4, 11`) still cites the `v0.1.0` baseline and pre-implementation open work. |
+| **Req §16, §17 / Plan §4–§7** — Printability, CLI Exit Codes & Out-of-Scope Constraints | `python/bt4v_*.py`, `bt4v_generate_all.sh` | **Partial** | All 7 parts (`≤180.0 mm` max dimension) print flat without supports on `220 × 220 mm` / `235 × 235 mm` beds; all §17 out-of-scope exclusions are respected; all 7 FreeCAD generators enforce exit code `2` on invalid CLI arguments, **but** `python/bt4v_drawing.py` and `python/bt4v_preview.py` ignore unrecognized CLI flags instead of returning exit code `2` per `Requirements.md` §16.3 and `Plan.md` §4. |
 
-1. **Step 1: Calibration & Fit Coupon Verification (`T2.1`):**
-   - 3D print `stl/BT4V_Fit_Coupon.stl` in target material (PLA or PETG).
-   - Test 12 AWG solid copper wire fit across friction channels (2.8 to 3.4 mm) and snap channels (2.2 / 2.4 mm mouth over 3.3 mm cavity).
-   - Verify M4 bolt clearance (4.3 mm hole) and hex nut capture pocket (7.2 mm across flats × 3.5 mm deep).
-   - Test tenon/mortise interlocking joint fit and 2.5 mm cross-pin alignment.
-   - Verify 25 mm terminal post pitch against RCA VH101R spade lugs.
+---
 
-2. **Step 2: Whisker Bending & Spreader Rigidity (`T2.2`):**
-   - Cut and bend 4 × UHF whiskers (410 mm wire, 32.5° flare angle, 200 mm arm length).
-   - Cut and bend 4 × VHF whiskers (690 mm wire, 25.5° flare angle, 340 mm arm length).
-   - Snap `stl/BT4V_Whisker_Spreader.stl` onto each VHF whisker at 150 mm radius to form a rigid truss triangle.
-   - Verify horizontal sag elimination under gravity load.
+## 4. Immediate Next Steps for Implementation
 
-3. **Step 3: Balun Cradle & Modular Spine Assembly (`T2.3`):**
-   - Print all production parts: 1 × Center Feed Hub, 4 × Bay Brackets, 4 × Spine Segments, 2 × Phase Crossovers, 4 × Whisker Spreaders, 1 × Hanging Cap.
-   - Assemble modular vertical spine and lock joints with 2.5 mm cross-pins or M2.5 screws.
-   - Snap RCA VH101R outdoor matching transformer into center feed cradle and secure spade lugs to M4 feed studs.
-   - Lay phase lines through spine grooves and install crossover spacers, confirming ≥5 mm physical air/dielectric gap between crossing lines.
-   - Clamp whisker apexes and phase lines into bay brackets using M4 hardware.
-
-4. **Step 4: DTV Reception & Signal Verification (`T2.4`):**
-   - Suspend assembled antenna from window hanging cap eyelets facing broadcast transmitter azimuth.
-   - Connect standard 75 Ω RG6 coaxial cable from RCA VH101R F-connector to television/tuner.
-   - Scan and verify reception of local VHF-High broadcast channels (Channels 7–13, 174–216 MHz) and UHF broadcast channels (Channels 14–36, 470–608 MHz).
+1. **Repair Fit Coupon Backing-Strut Socket & Docstring (`python/bt4v_fit_coupon.py`):**
+   - Update `python/bt4v_fit_coupon.py` (`lines 126–130`, `363–370`, `381–387`, and underside volume-tuning parameter `CAL_POCKET_LEN` at `line 170`) to relocate `backing_test_pocket` outside `top_sw_recess` onto full `Z = 10.0 mm` top deck thickness and resize it to `4.2 × 6.2 × 4.2 mm` so it matches the production backing-strut mortise socket (`bt4v_bay_bracket.py:94–96`, `bt4v_bowtie_backing.py:124–131`) while maintaining total coupon solid volume strictly within `26,500 mm³ ±2%` (`25,970–27,030 mm³`).
+   - Update the module docstring (`lines 18–19`) to remove the legacy `"triangular tine spreaders"` reference in favor of full-length bowtie backing struts.
+2. **Align 2D Technical Drawing Callouts, Balun Orientation & CLI Exit Codes (`python/bt4v_drawing.py`):**
+   - Update Table 2B Joint Cross-Pins quantity (`line 823`) from `"6"` to `"8–10"` (`7 active + spares`).
+   - Move the View B side-profile RCA VH101R balun illustration (`lines 701–709`) from the rear (`-Y`) spine face to the front (`+Y`) cradle face of the Center Feed Hub to match `bt4v_center_feed.py` (`lines 199–227`).
+   - Add CLI argument validation (`lines 1022–1030`) that exits with status code `2` (`sys.exit(2)`) on unrecognized CLI flags.
+3. **Align 3D Parts Preview Joint Callout & CLI Exit Codes (`python/bt4v_preview.py`):**
+   - Update Card 08 (`MODULAR SPINE ASSEMBLY`) footer annotation (`line 676`) from `"6 modular spine joints"` to `"7 modular spine joints"`.
+   - Add CLI argument validation (`lines 701–709`) that exits with status code `2` (`sys.exit(2)`) on unrecognized CLI flags.
+4. **Clean Up Minor CAD Generator Code Hygiene (`python/bt4v_center_feed.py`, `python/bt4v_bowtie_backing.py`, `python/bt4v_phase_crossover.py`):**
+   - Remove unused dead constants `EXT_X`, `EXT_Z_BOT`, and `EXT_Z_TOP` in `python/bt4v_center_feed.py` (`lines 98–101`).
+   - Align the header docstring note in `python/bt4v_bowtie_backing.py` (`line 13`) to state `176.0 mm` active body span + `4.0 mm` root tenon = `180.0 mm` total X extent, matching `line 28` and the CSG geometry (`lines 118–131`).
+   - Add an explicit `sys.exit(0)` at the end of `python/bt4v_phase_crossover.py` (`line 465`) for uniform exit handling across all generators.
+5. **Synchronize Documentation, Git Index & Build Artifacts (`BT4-V BOM.md`, `Bugs.md`, `stl/`, `__pycache__/`):**
+   - Correct the complete production set nominal volume total on `BT4-V BOM.md` (`line 21`) from `~189,000 mm³` to `233,200 mm³`.
+   - Update `Bugs.md` (`lines 3–4, 11`) from `v0.1.0` pre-implementation wording to the `v0.3.0` baseline.
+   - Untrack generated STL meshes from the git index (`git rm --cached stl/*.stl`), delete orphaned `__pycache__/solve.cpython-312.pyc` and `__pycache__/test_coupon.cpython-312.pyc`, and re-run `./bt4v_generate_all.sh` to regenerate synchronized STLs and PNGs.

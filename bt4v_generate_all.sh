@@ -2,7 +2,7 @@
 # ==============================================================================
 # BT4-V 3D Printed Antenna — Headless Master Build Orchestrator
 #
-# Generates all 8 STL assets and 2 PNG deliverables in strict
+# Generates all 7 STL assets and 2 PNG deliverables in strict
 # sequence, enforcing solid validity and geometry constraints per
 # Requirements.md (§13, §16.3) and Plan.md (§3.1, T1.4).
 #
@@ -59,12 +59,25 @@ echo "Workspace root : $(pwd)"
 echo "================================================================================"
 
 # ------------------------------------------------------------------------------
-# Validation Function
+# Validation Functions
 # ------------------------------------------------------------------------------
+MIN_PNG_BYTES=10240
+
 require_output() {
     local target="$1"
     if [ ! -s "$target" ]; then
         echo "ERROR: Expected output artifact '$target' is missing or empty." >&2
+        exit 1
+    fi
+}
+
+require_png_output() {
+    local target="$1"
+    require_output "$target"
+    local size
+    size=$(stat -c %s "$target")
+    if [ "$size" -le "$MIN_PNG_BYTES" ]; then
+        echo "ERROR: PNG deliverable '$target' is $size bytes (must exceed $MIN_PNG_BYTES bytes / 10 kB)." >&2
         exit 1
     fi
 }
@@ -113,7 +126,7 @@ for entry in "${GRAPHICS_GENERATORS[@]}"; do
     echo "--------------------------------------------------------------------------------"
     rm -f "$target"
     "$PYTHON_CMD" "$script"
-    require_output "$target"
+    require_png_output "$target"
     size=$(stat -c %s "$target")
     echo "Generated: $target ($size bytes)"
 done
@@ -138,7 +151,11 @@ ARTIFACTS=(
 )
 
 for artifact in "${ARTIFACTS[@]}"; do
-    require_output "$artifact"
+    if [[ "$artifact" == *.png ]]; then
+        require_png_output "$artifact"
+    else
+        require_output "$artifact"
+    fi
     size=$(stat -c %s "$artifact")
     printf "  %-32s : %8d bytes\n" "$artifact" "$size"
 done

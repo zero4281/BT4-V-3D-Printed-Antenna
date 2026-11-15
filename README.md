@@ -11,13 +11,13 @@
 **BT4-V** is a high-performance, 4-bay bowtie digital television (DTV) antenna with integrated VHF-High coverage, engineered for 3D-printed fabrication and indoor window suspension.
 
 The antenna combines:
-- **Four co-phased bowtie bays** arranged vertically along a modular 3D-printed spine.
+- **Four co-phased bowtie bays** arranged vertically along a modular 3D-printed spine at an exact **130.0 mm** center-to-center pitch (`390.0 mm` active array span, `~560 mm` overall height).
 - **Strictly horizontal polarisation (0° tilt across all elements)**, eliminating cross-polarisation loss.
 - **Dual-band coverage:** The inner two bays (Bays 2 and 3) are tuned for high-gain broadband UHF reception (470–608 MHz, channels 14–36), while the outer two bays (Bays 1 and 4, top and bottom) feature extended whiskers tuned for VHF-High reception (174–216 MHz, channels 7–13).
-- **Full-Length Bowtie Backing Struts:** Continuous 3D-printed snap-fit backing struts running from bay bracket root to wire tip, permanently locking exact flare angles (32.5° UHF, 25.5° VHF) and completely eliminating gravity sag, droop, or vibration.
-- **RCA VH101R Matching Transformer Integration:** A commercial 300:75 Ω outdoor matching transformer (4:1 balun) mounts directly to the center feed bracket via its screw lugs, providing a female F-connector output for direct 75 Ω RG6 coaxial feed to the television.
+- **Full-Length Interlocking Bowtie Backing Struts:** Continuous 3D-printed C-clip snap-fit backing struts running behind every V-whisker arm from bay bracket root to wire tip (1 strut per 200 mm UHF arm; 2 daisy-chained struts per 340 mm VHF arm), permanently locking exact flare angles (32.5° UHF, 25.5° VHF) and completely eliminating gravity sag, droop, or vibration.
+- **RCA VH101R Matching Transformer Integration:** A commercial 300:75 Ω outdoor matching transformer (4:1 balun) mounts directly to the center feed hub via its screw lugs, providing a female F-connector output for direct 75 Ω RG6 coaxial feed to the television.
 
-BT4-V delivers +6 to +8 dBi forward gain across UHF and +3 to +4 dBi across VHF-High in an ultra-lightweight (~210 g), flat, modular form factor fitting a standard window (<600 mm height).
+BT4-V delivers +6 to +8 dBi forward gain across UHF and +3 to +4 dBi across VHF-High in an ultra-lightweight (~235 g), flat, modular form factor fitting a standard window (<600 mm height).
 
 ---
 
@@ -43,7 +43,7 @@ BT4-V-Antenna/
 │   ├── bt4v_bay_bracket.py       # Whisker mounting bracket (Bays 1–4)
 │   ├── bt4v_spine_segment.py     # Interlocking modular vertical spine struts
 │   ├── bt4v_phase_crossover.py   # Phase-line crossover insulator / guide
-│   ├── bt4v_bowtie_backing.py    # Full-length bowtie backing strut
+│   ├── bt4v_bowtie_backing.py    # Full-length interlocking bowtie backing strut
 │   ├── bt4v_hanging_cap.py       # Top hanging cap with suspension eyelets
 │   ├── bt4v_fit_coupon.py        # Pre-print tolerance and snap-fit coupon
 │   ├── bt4v_drawing.py           # 2D technical drawing generator (Pillow)
@@ -72,13 +72,13 @@ BT4-V-Antenna/
 | **Pillow (`PIL`)** | `>= 9.0` (Tested on 10.2.0) | 2D technical drawing and 3D preview rendering |
 | **System Fonts** | `DejaVu Sans` / `DejaVu Sans Bold` | Text rendering on deliverables |
 | **POSIX Bash** | `>= 5.0` | Build orchestration (`bt4v_generate_all.sh`) |
-| **3D Printer** | $\ge 235 \times 235 \times 250\text{ mm}$ | PETG or PLA recommended |
+| **3D Printer** | $\ge 220 \times 220 \text{ mm}$ (or $235 \times 235 \times 250\text{ mm}$) | PETG or PLA recommended |
 
 ---
 
 ## 4. Build Orchestration
 
-To regenerate all STL models and PNG drawings from clean source:
+To regenerate all 7 STL models and 2 PNG drawings from clean source:
 
 ```bash
 FREECAD_CMD=/snap/bin/freecad.cmd ./bt4v_generate_all.sh

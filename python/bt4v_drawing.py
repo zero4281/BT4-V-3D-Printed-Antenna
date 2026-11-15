@@ -7,52 +7,13 @@ Generates the master engineering 2D technical drawing deliverable:
 
 Technical Specifications & Requirements Baseline:
 - Requirements Baseline: Requirements.md §3, §4, §12.1, §14, §16.3
-- Plan Baseline: Plan.md §3.1 (T1.3)
 - Deliverable: Exactly 2200 x 1500 px PNG image, >10 kB file size.
 - Theme: High-contrast blueprint/engineering theme (#0B1D3A dark blue canvas,
   crisp white and cyan line art, copper element callouts, dimension lines,
   and formal ASME/ISO style title block).
 
-Drawing Content:
-1. Master Title Banner: BT4-V 4-BAY BOWTIE + VHF INDOOR WINDOW TV ANTENNA
-2. Front Elevation View (Scale 1:1.4):
-   - 4 vertically stacked bays at 130 mm pitch (390 mm active span, ~560 mm overall height)
-   - Top Bay 1 (VHF-High, 680 mm tip-to-tip span, 25.5° flare angle, triangular tine spreaders at 150 mm radius)
-   - Bay 2 (UHF, 400 mm tip-to-tip span, 32.5° flare angle)
-   - Center Feed Hub (RCA VH101R matching transformer cradle, 25 mm C-to-C feed terminals, downward 75Ω F-connector)
-   - Bay 3 (UHF, 400 mm tip-to-tip span, 32.5° flare angle)
-   - Bottom Bay 4 (VHF-High, 680 mm tip-to-tip span, 25.5° flare angle, triangular tine spreaders at 150 mm radius)
-   - 2 vertical 12 AWG copper phase lines (25 mm spacing) with 2 crossover transposition spacers
-     between Bays 1–2 and Bays 3–4 (180° phase inversion)
-   - Top Hanging Cap with dual anti-rotation eyelets (30 mm pitch, Ø5.0 mm)
-   - Comprehensive engineering dimension callouts, leader lines, and flare arcs.
-3. Side Profile View (Scale 1:1.4):
-   - Vertically aligned orthographic projection with front elevation
-   - Modular spine profile, I-beam ribs, whisker clamp hardware (M4 bolts & nuts)
-   - Crossover clips on spine
-   - RCA VH101R commercial balun mounting in Center Feed cradle with downward F-connector
-   - 75Ω RG6 coaxial cable drop with zip-tie strain relief
-   - Top hanging cap side yoke with suspension wire
-4. Channel Mapping & Electrical Performance Table:
-   - RF 8 (VHF-Hi 183 MHz, KEYC-DT CBS / KMNF-CD NBC)
-   - RF 12 (VHF-Hi 207 MHz, KEYC-DT FOX / KEYC-HD CBS)
-   - RF 14 (UHF 473 MHz, KMNF-LD NBC/CW / KSTPDT ABC)
-   - RF 26 (UHF 545 MHz, KSTP-TV ABC / TPT 2 PBS)
-   - RF 33 (UHF 587 MHz, Pioneer PBS / KMNFLD1 NBC)
-   - Performance Targets: VHF-Hi Gain 5.5 dBi, UHF Gain 8.5 dBi, 300:75 Ω match via RCA VH101R, SWR < 2.0:1
-5. Assembly, Wire-Bending & Hardware Specifications:
-   - 12 AWG solid copper wire cut lengths: 4 × VHF (690 mm), 4 × UHF (410 mm), 2 × Phase lines (580 mm), total ~5.6 m
-   - Hardware: 10 × M4 bolts/nuts, 10 × 2.5 mm cross-pins, RCA VH101R balun
-   - 3D Printed Parts BOM (Center Feed, Bay Brackets, Spine Segments, Crossovers, Spreaders, Hanging Cap, Fit Coupon)
-6. General Engineering Notes & Fabrication Instructions:
-   - 3D printing parameters (0.2 mm layer, PETG/PLA, 4 perimeters, 25% infill)
-   - Wire fabrication, bending templates, droop mitigation
-   - Balun installation and window mounting spacing (≥0.5 m from metal insect screens)
-7. Formal Engineering Title Block:
-   - Revision v0.3.0, Scale, Date, Author, Third-Angle Projection symbol, L1 verification badge.
-
 Usage:
-    python3 python/bt4v_drawing.py
+    python3 python/bt4v_drawing.py [-h | --help] [output_path]
 """
 
 import math
@@ -70,7 +31,7 @@ OUTPUT_PATH = os.path.join(PROJECT_ROOT, OUTPUT_FILENAME)
 
 CANVAS_WIDTH = 2200
 CANVAS_HEIGHT = 1500
-MIN_FILE_SIZE_BYTES = 10 * 1024  # >10 kB per Testing Strategy §2.4
+MIN_FILE_SIZE_BYTES = 10 * 1024  # >10 kB per Testing Strategy §2.2
 
 # -----------------------------------------------------------------------------
 # COLOR PALETTE (High-Contrast Engineering Blueprint Theme)
@@ -230,23 +191,19 @@ def draw_dim_h(draw: ImageDraw.ImageDraw, x1: float, x2: float, y: float, text: 
     """Draws a horizontal engineering dimension with extension lines, arrows, and masked text."""
     if x1 > x2:
         x1, x2 = x2, x1
-    # Extension lines
     if ext_y1 is not None and ext_y2 is not None:
         draw.line([(x1, ext_y1), (x1, ext_y2)], fill=color, width=1)
         draw.line([(x2, ext_y1), (x2, ext_y2)], fill=color, width=1)
-    # Dimension line
     draw.line([(x1, y), (x2, y)], fill=color, width=1)
-    # Inward arrows
     draw_arrowhead(draw, x1, y, 0.0, size=7.0, color=color)
     draw_arrowhead(draw, x2, y, math.pi, size=7.0, color=color)
-    # Text with mask pill
     bbox = draw.textbbox((0, 0), text, font=font)
     tw = bbox[2] - bbox[0]
     th = bbox[3] - bbox[1]
     cx = (x1 + x2) / 2
     pad = 4
     mask_box = [cx - tw / 2 - pad, y - th / 2 - pad, cx + tw / 2 + pad, y + th / 2 + pad]
-    draw.rectangle(mask_box, fill=COLOR_BG)
+    draw.rectangle(mask_box, fill=COLOR_PANEL_BG)
     draw.text((cx - tw / 2, y - th / 2 - 1), text, fill=text_color, font=font)
 
 
@@ -257,13 +214,10 @@ def draw_dim_v(draw: ImageDraw.ImageDraw, y1: float, y2: float, x: float, lines,
     """Draws a vertical engineering dimension with stacked text centered or offset."""
     if y1 > y2:
         y1, y2 = y2, y1
-    # Extension lines
     if ext_x1 is not None and ext_x2 is not None:
         draw.line([(ext_x1, y1), (ext_x2, y1)], fill=color, width=1)
         draw.line([(ext_x1, y2), (ext_x2, y2)], fill=color, width=1)
-    # Dimension line
     draw.line([(x, y1), (x, y2)], fill=color, width=1)
-    # Inward arrows
     draw_arrowhead(draw, x, y1, math.pi / 2, size=7.0, color=color)
     draw_arrowhead(draw, x, y2, -math.pi / 2, size=7.0, color=color)
 
@@ -279,7 +233,7 @@ def draw_dim_v(draw: ImageDraw.ImageDraw, y1: float, y2: float, x: float, lines,
     cx = x + text_offset_x
     pad = 3
     mask_box = [cx - max_tw / 2 - pad, cy - total_th / 2 - pad, cx + max_tw / 2 + pad, cy + total_th / 2 + pad]
-    draw.rectangle(mask_box, fill=COLOR_BG)
+    draw.rectangle(mask_box, fill=COLOR_PANEL_BG)
 
     start_y = cy - total_th / 2
     for i, line in enumerate(lines):
@@ -292,7 +246,7 @@ def draw_leader_callout(draw: ImageDraw.ImageDraw, tip_x: float, tip_y: float,
                         knee_x: float, knee_y: float, arm_x: float, lines,
                         font: ImageFont.ImageFont = FONT_BOLD, color: tuple = COLOR_DIM_LINE,
                         text_color: tuple = COLOR_DIM_TEXT):
-    """Draws a leader callout line pointing to a feature with arrow, knee, horizontal shelf, and text."""
+    """Draws a leader callout line pointing to a feature with arrow, knee, horizontal shelf, and masked text."""
     if isinstance(lines, str):
         lines = [lines]
     angle = math.atan2(knee_y - tip_y, knee_x - tip_x)
@@ -302,6 +256,7 @@ def draw_leader_callout(draw: ImageDraw.ImageDraw, tip_x: float, tip_y: float,
 
     line_bboxes = [draw.textbbox((0, 0), l, font=font) for l in lines]
     lh = max((b[3] - b[1]) for b in line_bboxes) + 2
+    max_tw = max((b[2] - b[0]) for b in line_bboxes)
     total_h = len(lines) * lh
 
     if arm_x >= knee_x:
@@ -309,7 +264,8 @@ def draw_leader_callout(draw: ImageDraw.ImageDraw, tip_x: float, tip_y: float,
     else:
         tx = arm_x + 5
 
-    ty = knee_y - total_h - 2
+    ty = knee_y - total_h - 3
+    draw.rectangle([tx - 3, ty - 2, tx + max_tw + 3, knee_y - 1], fill=COLOR_PANEL_BG)
     for i, line in enumerate(lines):
         draw.text((tx, ty + i * lh), line, fill=text_color, font=font)
 
@@ -324,10 +280,8 @@ def draw_table(draw: ImageDraw.ImageDraw, x: int, y: int, widths: list, headers:
     if alignments is None:
         alignments = ['left'] * len(widths)
 
-    # Outer border and header background
     draw.rectangle([x, y, x + total_w, y + header_height], fill=header_bg, outline=COLOR_PANEL_BORDER)
 
-    # Header text
     col_x = x
     for i, (hdr, w) in enumerate(zip(headers, widths)):
         bbox = draw.textbbox((0, 0), hdr, font=font_hdr)
@@ -346,7 +300,6 @@ def draw_table(draw: ImageDraw.ImageDraw, x: int, y: int, widths: list, headers:
             draw.line([(col_x, y), (col_x, y + total_h)], fill=COLOR_PANEL_BORDER, width=1)
         col_x += w
 
-    # Rows
     cur_y = y + header_height
     for r_idx, row in enumerate(rows):
         row_bg = COLOR_ROW_ALT if (r_idx % 2 == 1) else COLOR_PANEL_BG
@@ -384,7 +337,6 @@ def draw_table(draw: ImageDraw.ImageDraw, x: int, y: int, widths: list, headers:
             col_x += w
         cur_y += row_height
 
-    # Final perimeter
     draw.rectangle([x, y, x + total_w, y + total_h], outline=COLOR_PANEL_BORDER, width=1)
     return total_h
 
@@ -415,7 +367,7 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     draw.rectangle(banner_box, fill=(7, 21, 44), outline=COLOR_PANEL_BORDER, width=1)
 
     title_text = "BT4-V 3D PRINTED INDOOR WINDOW TV ANTENNA — 2D TECHNICAL SPECIFICATION"
-    sub_text = "4-BAY HYBRID BOWTIE + EXTENDED VHF-HI RESONATORS  |  MODULAR SPINE & COMMERCIAL BALUN INTEGRATION  |  REV v0.3.0"
+    sub_text = "4-BAY BOWTIE + EXTENDED VHF-HIGH RESONATORS  |  FULL-LENGTH BACKING STRUTS & RCA BALUN  |  REV v0.3.0"
     draw.text((50, 44), title_text, fill=COLOR_TEXT_WHITE, font=FONT_MAIN_TITLE)
     draw.text((52, 72), sub_text, fill=COLOR_TEXT_CYAN, font=FONT_MAIN_SUB)
 
@@ -427,12 +379,6 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     # -------------------------------------------------------------------------
     # PANEL REGIONS
     # -------------------------------------------------------------------------
-    # Col 1: Front Elevation View (X: 42 to 1180, Y: 100 to 1235)
-    # Col 2: Side Profile View   (X: 1195 to 1475, Y: 100 to 1235)
-    # Col 3: Tables & Title Block (X: 1490 to 2162, Y: 100 to 1462)
-    # Bottom Strip: General Fabrication Notes (X: 42 to 1475, Y: 1245 to 1462)
-
-    # Draw Panel Backgrounds & Borders
     draw.rectangle([42, 100, 1180, 1235], fill=COLOR_PANEL_BG, outline=COLOR_PANEL_BORDER, width=1)
     draw.rectangle([1195, 100, 1475, 1235], fill=COLOR_PANEL_BG, outline=COLOR_PANEL_BORDER, width=1)
     draw.rectangle([42, 1245, 1475, 1462], fill=COLOR_PANEL_BG, outline=COLOR_PANEL_BORDER, width=1)
@@ -460,66 +406,64 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     y_bay3 = Y_CENTER + 65.0 * SCALE     # 746.0
     y_bay4 = Y_CENTER + 195.0 * SCALE    # 928.0
 
-    y_bay1_top = y_bay1 - 20.0 * SCALE   # 354.0
-    y_cap_top = y_bay1_top - 30.0 * SCALE # 312.0
-    y_cap_eyelet = y_bay1_top - 23.0 * SCALE # 321.8
+    bh = 15.0 * SCALE                    # 30 mm active bracket height -> ±15 mm from center
+    y_bay1_top = y_bay1 - bh             # 361.0
+    y_cap_top = y_bay1_top - 30.0 * SCALE # 319.0
+    y_cap_eyelet = y_bay1_top - 23.0 * SCALE # 328.8
 
-    # 1. Spine Segments (Between brackets and feed hub)
-    sw = 10.0 * SCALE
-    draw.rectangle([X_CENTER - sw, y_bay1 + 20 * SCALE, X_CENTER + sw, y_bay2 - 20 * SCALE],
+    # 1. Spine Segments (2 segments: between Bay 1–2 and Bay 3–4; 30 mm wide x 100 mm active)
+    sw = 15.0 * SCALE
+    draw.rectangle([X_CENTER - sw, y_bay1 + bh, X_CENTER + sw, y_bay2 - bh],
                    fill=COLOR_PLASTIC_FILL, outline=COLOR_PLASTIC_OUTLINE, width=2)
-    draw.rectangle([X_CENTER - sw, y_bay2 + 20 * SCALE, X_CENTER + sw, y_feed_ctr - 35 * SCALE],
-                   fill=COLOR_PLASTIC_FILL, outline=COLOR_PLASTIC_OUTLINE, width=2)
-    draw.rectangle([X_CENTER - sw, y_feed_ctr + 35 * SCALE, X_CENTER + sw, y_bay3 - 20 * SCALE],
-                   fill=COLOR_PLASTIC_FILL, outline=COLOR_PLASTIC_OUTLINE, width=2)
-    draw.rectangle([X_CENTER - sw, y_bay3 + 20 * SCALE, X_CENTER + sw, y_bay4 - 20 * SCALE],
+    draw.rectangle([X_CENTER - sw, y_bay3 + bh, X_CENTER + sw, y_bay4 - bh],
                    fill=COLOR_PLASTIC_FILL, outline=COLOR_PLASTIC_OUTLINE, width=2)
 
-    # 2. Whisker Bay Brackets (4 bays)
+    # 2. Center Feed Hub (Spans 100 mm active directly between Bay 2 and Bay 3; 40 mm central width)
+    cf_ext_w = 15.0 * SCALE
+    draw.rectangle([X_CENTER - cf_ext_w, y_bay2 + bh, X_CENTER + cf_ext_w, y_bay3 - bh],
+                   fill=COLOR_PLASTIC_FILL, outline=COLOR_PLASTIC_OUTLINE, width=2)
+    cfw = 20.0 * SCALE
+    cfh = 28.0 * SCALE
+    draw.rectangle([X_CENTER - cfw, y_feed_ctr - cfh, X_CENTER + cfw, y_feed_ctr + cfh],
+                   fill=COLOR_PLASTIC_FILL, outline=COLOR_PLASTIC_OUTLINE, width=2)
+
+    # Balun cradle cavity representation
+    draw.rectangle([X_CENTER - 11 * SCALE, y_feed_ctr - 18 * SCALE, X_CENTER + 11 * SCALE, y_feed_ctr + 20 * SCALE],
+                   fill=COLOR_BALUN_BODY, outline=COLOR_BALUN_ACCENT, width=1)
+
+    # 3. Whisker Bay Brackets (4 bays: 50 mm wide x 30 mm active height)
     bw = 25.0 * SCALE
-    bh = 20.0 * SCALE
     for y_b in [y_bay1, y_bay2, y_bay3, y_bay4]:
         draw.rectangle([X_CENTER - bw, y_b - bh, X_CENTER + bw, y_b + bh],
                        fill=COLOR_PLASTIC_FILL, outline=COLOR_PLASTIC_OUTLINE, width=2)
-        draw.line([(X_CENTER - 6 * SCALE, y_b - bh), (X_CENTER - 6 * SCALE, y_b - bh - 8)], fill=COLOR_PLASTIC_DETAIL, width=1)
-        draw.line([(X_CENTER + 6 * SCALE, y_b - bh), (X_CENTER + 6 * SCALE, y_b - bh - 8)], fill=COLOR_PLASTIC_DETAIL, width=1)
+        draw.line([(X_CENTER - 6 * SCALE, y_b - bh), (X_CENTER - 6 * SCALE, y_b - bh - 6)], fill=COLOR_PLASTIC_DETAIL, width=1)
+        draw.line([(X_CENTER + 6 * SCALE, y_b - bh), (X_CENTER + 6 * SCALE, y_b - bh - 6)], fill=COLOR_PLASTIC_DETAIL, width=1)
         for sign in [-1, 1]:
             hx = X_CENTER + sign * 12.5 * SCALE
             draw.ellipse([hx - 4, y_b - 4, hx + 4, y_b + 4], fill=COLOR_HARDWARE, outline=COLOR_TEXT_WHITE)
             draw.line([(hx - 3, y_b), (hx + 3, y_b)], fill=(40, 50, 60), width=1)
 
-    # 3. Center Feed Hub
-    cfw = 20.0 * SCALE
-    cfh = 35.0 * SCALE
-    draw.rectangle([X_CENTER - cfw, y_feed_ctr - cfh, X_CENTER + cfw, y_feed_ctr + cfh],
-                   fill=COLOR_PLASTIC_FILL, outline=COLOR_PLASTIC_OUTLINE, width=2)
-
-    # Balun cradle cavity representation
-    draw.rectangle([X_CENTER - 15 * SCALE, y_feed_ctr - 22 * SCALE, X_CENTER + 15 * SCALE, y_feed_ctr + 24 * SCALE],
-                   fill=COLOR_BALUN_BODY, outline=COLOR_BALUN_ACCENT, width=1)
-    draw.text((X_CENTER - 22, y_feed_ctr - 7), "RCA BALUN", fill=COLOR_BALUN_ACCENT, font=FONT_TINY)
-
-    # M4 Feed Terminals (25 mm spacing -> X = ±12.5 mm -> ±17.5 px at y_feed_ctr)
+    # M4 Feed Terminals (25 mm spacing -> X = ±12.5 mm at y_feed_ctr)
     for sign in [-1, 1]:
         tx = X_CENTER + sign * 12.5 * SCALE
         draw.ellipse([tx - 5, y_feed_ctr - 5, tx + 5, y_feed_ctr + 5], fill=COLOR_COPPER, outline=COLOR_HARDWARE, width=1)
         draw.line([(tx, y_feed_ctr - 5), (tx, y_feed_ctr - 12)], fill=COLOR_HARDWARE, width=2)
 
     # Downward coax connector from Center Feed
-    draw.rectangle([X_CENTER - 5 * SCALE, y_feed_ctr + cfh, X_CENTER + 5 * SCALE, y_feed_ctr + cfh + 12],
+    draw.rectangle([X_CENTER - 4 * SCALE, y_feed_ctr + 20 * SCALE, X_CENTER + 4 * SCALE, y_feed_ctr + 20 * SCALE + 10],
                    fill=COLOR_BALUN_ACCENT, outline=COLOR_TEXT_WHITE, width=1)
-    draw.line([(X_CENTER, y_feed_ctr + cfh + 12), (X_CENTER, y_feed_ctr + cfh + 50)], fill=COLOR_COAX, width=6)
-    draw.line([(X_CENTER, y_feed_ctr + cfh + 12), (X_CENTER, y_feed_ctr + cfh + 50)], fill=COLOR_COAX_HL, width=2)
+    draw.line([(X_CENTER, y_feed_ctr + 20 * SCALE + 10), (X_CENTER, y_feed_ctr + cfh + 25)], fill=COLOR_COAX, width=6)
+    draw.line([(X_CENTER, y_feed_ctr + 20 * SCALE + 10), (X_CENTER, y_feed_ctr + cfh + 25)], fill=COLOR_COAX_HL, width=2)
 
     # 4. Top Hanging Cap
     cw = 22.0 * SCALE
     draw.polygon([
-        (X_CENTER - sw, y_bay1_top),
+        (X_CENTER - 10.0 * SCALE, y_bay1_top),
         (X_CENTER - cw, y_bay1_top - 12 * SCALE),
         (X_CENTER - cw, y_cap_top),
         (X_CENTER + cw, y_cap_top),
         (X_CENTER + cw, y_bay1_top - 12 * SCALE),
-        (X_CENTER + sw, y_bay1_top)
+        (X_CENTER + 10.0 * SCALE, y_bay1_top)
     ], fill=COLOR_PLASTIC_FILL, outline=COLOR_PLASTIC_OUTLINE)
 
     for sign in [-1, 1]:
@@ -539,73 +483,62 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
         draw.line([(X_CENTER - 12.5 * SCALE, y_xo - xoh), (X_CENTER + 12.5 * SCALE, y_xo + xoh)], fill=COLOR_PLASTIC_DETAIL, width=1)
         draw.line([(X_CENTER + 12.5 * SCALE, y_xo - xoh), (X_CENTER - 12.5 * SCALE, y_xo + xoh)], fill=COLOR_PLASTIC_DETAIL, width=1)
 
-    # 6. Continuous 12 AWG Phase Lines with 180° Transpositions
+    # 6. Continuous 12 AWG Phase Lines with 180° Transpositions (Straight 25.0 mm pitch)
     pl_x1 = X_CENTER - 12.5 * SCALE  # Left bus (590.5)
     pl_x2 = X_CENTER + 12.5 * SCALE  # Right bus (625.5)
 
-    # Bay 1 to Crossover 1 top
     draw.line([(pl_x1, y_bay1), (pl_x1, y_xo1 - xoh)], fill=COLOR_COPPER, width=3)
     draw.line([(pl_x2, y_bay1), (pl_x2, y_xo1 - xoh)], fill=COLOR_COPPER, width=3)
 
-    # Crossover 1 (Transposition: 180° phase flip)
     draw.line([(pl_x1, y_xo1 - xoh), (pl_x2, y_xo1 + xoh)], fill=COLOR_COPPER, width=3)
     draw_dashed_line(draw, pl_x2, y_xo1 - xoh, pl_x1, y_xo1 + xoh, color=COLOR_COPPER_REAR, dash=4, gap=3, width=3)
 
-    # Crossover 1 bottom to Crossover 2 top (passing Bay 2, Center Feed, Bay 3)
     draw.line([(pl_x1, y_xo1 + xoh), (pl_x1, y_xo2 - xoh)], fill=COLOR_COPPER, width=3)
     draw.line([(pl_x2, y_xo1 + xoh), (pl_x2, y_xo2 - xoh)], fill=COLOR_COPPER, width=3)
 
-    # Crossover 2 (Transposition: 180° phase flip)
     draw.line([(pl_x1, y_xo2 - xoh), (pl_x2, y_xo2 + xoh)], fill=COLOR_COPPER, width=3)
     draw_dashed_line(draw, pl_x2, y_xo2 - xoh, pl_x1, y_xo2 + xoh, color=COLOR_COPPER_REAR, dash=4, gap=3, width=3)
 
-    # Crossover 2 bottom to Bay 4
     draw.line([(pl_x1, y_xo2 + xoh), (pl_x1, y_bay4)], fill=COLOR_COPPER, width=3)
     draw.line([(pl_x2, y_xo2 + xoh), (pl_x2, y_bay4)], fill=COLOR_COPPER, width=3)
 
-    # 7. Bowtie Whiskers & Triangular Tine Spreaders
+    # Clean masked pill for VH101R label on Center Feed Hub so phase lines don't obscure text
+    draw.rectangle([X_CENTER - 16, y_feed_ctr + 6, X_CENTER + 16, y_feed_ctr + 18], fill=COLOR_BALUN_BODY, outline=COLOR_BALUN_ACCENT)
+    draw.text((X_CENTER - 14, y_feed_ctr + 7), "VH101R", fill=COLOR_TEXT_WHITE, font=FONT_TINY)
+
+    # 7. Bowtie Whiskers & Full-Length Interlocking Backing Struts (All 16 Arms)
     vhf_dx = 340.0 * math.cos(math.radians(12.75)) * SCALE
     vhf_dy = 340.0 * math.sin(math.radians(12.75)) * SCALE
 
     uhf_dx = 200.0 * math.cos(math.radians(16.25)) * SCALE
     uhf_dy = 200.0 * math.sin(math.radians(16.25)) * SCALE
 
-    spreader_dx = 150.0 * math.cos(math.radians(12.75)) * SCALE
-    spreader_dy = 150.0 * math.sin(math.radians(12.75)) * SCALE
-
     def draw_bowtie(y_apex: float, dx: float, dy: float, is_vhf: bool):
-        draw.line([(pl_x1, y_apex), (pl_x1 - dx, y_apex - dy)], fill=COLOR_COPPER, width=3)
-        draw.line([(pl_x1, y_apex), (pl_x1 - dx, y_apex + dy)], fill=COLOR_COPPER, width=3)
+        # First draw the Full-Length Bowtie Backing Struts directly behind all 4 arms of the bay
+        for sign_x in [-1, 1]:
+            apex_x = pl_x1 if sign_x == -1 else pl_x2
+            root_x = X_CENTER + sign_x * bw
+            for sign_y in [-1, 1]:
+                root_y = y_apex + sign_y * (dy * (12.5 * SCALE) / dx)
+                tip_x = apex_x + sign_x * dx
+                tip_y = y_apex + sign_y * dy
+                # Draw backing strut envelope behind wire
+                draw.line([(root_x, root_y), (tip_x, tip_y)], fill=COLOR_PLASTIC_OUTLINE, width=7)
+                draw.line([(root_x, root_y), (tip_x, tip_y)], fill=COLOR_PLASTIC_FILL, width=5)
+                # For 340 mm VHF arms, show the mid-arm interlock joint between the 2 daisy-chained struts
+                if is_vhf:
+                    jx = (root_x + tip_x) / 2.0
+                    jy = (root_y + tip_y) / 2.0
+                    draw.rectangle([jx - 4, jy - 4, jx + 4, jy + 4], fill=COLOR_PLASTIC_FILL, outline=COLOR_PLASTIC_OUTLINE, width=1)
+
+        # Then draw the 12 AWG copper wire arms seated in the backing strut C-channels
+        draw.line([(pl_x1, y_apex), (pl_x1 - dx, y_apex - dy)], fill=COLOR_COPPER, width=2)
+        draw.line([(pl_x1, y_apex), (pl_x1 - dx, y_apex + dy)], fill=COLOR_COPPER, width=2)
         draw.ellipse([pl_x1 - 3, y_apex - 3, pl_x1 + 3, y_apex + 3], fill=COLOR_COPPER)
 
-        draw.line([(pl_x2, y_apex), (pl_x2 + dx, y_apex - dy)], fill=COLOR_COPPER, width=3)
-        draw.line([(pl_x2, y_apex), (pl_x2 + dx, y_apex + dy)], fill=COLOR_COPPER, width=3)
+        draw.line([(pl_x2, y_apex), (pl_x2 + dx, y_apex - dy)], fill=COLOR_COPPER, width=2)
+        draw.line([(pl_x2, y_apex), (pl_x2 + dx, y_apex + dy)], fill=COLOR_COPPER, width=2)
         draw.ellipse([pl_x2 - 3, y_apex - 3, pl_x2 + 3, y_apex + 3], fill=COLOR_COPPER)
-
-        # Continuous backing struts (BT4V_Bowtie_Backing.stl): 2 per bay running continuously along upper and lower arms
-        for sign in [-1, 1]:
-            root_x = X_CENTER + sign * (bw - 2 * SCALE)
-            tip_x = (pl_x1 if sign == -1 else pl_x2) + sign * (dx * 0.96)
-            tip_y_up = y_apex - dy * 0.96
-            tip_y_dn = y_apex + dy * 0.96
-            # Upper arm backing strut
-            draw.line([(root_x, y_apex - 2 * SCALE), (tip_x, tip_y_up - 2 * SCALE)], fill=COLOR_PLASTIC_FILL, width=5)
-            draw.line([(root_x, y_apex - 2 * SCALE), (tip_x, tip_y_up - 2 * SCALE)], fill=COLOR_PLASTIC_OUTLINE, width=1)
-            # Lower arm backing strut
-            draw.line([(root_x, y_apex + 2 * SCALE), (tip_x, tip_y_dn + 2 * SCALE)], fill=COLOR_PLASTIC_FILL, width=5)
-            draw.line([(root_x, y_apex + 2 * SCALE), (tip_x, tip_y_dn + 2 * SCALE)], fill=COLOR_PLASTIC_OUTLINE, width=1)
-
-        if is_vhf:
-            for sign in [-1, 1]:
-                apex_x = pl_x1 if sign == -1 else pl_x2
-                sx = apex_x + sign * spreader_dx
-                sy_top = y_apex - spreader_dy
-                sy_bot = y_apex + spreader_dy
-                draw.rectangle([sx - 4, sy_top, sx + 4, sy_bot], fill=COLOR_PLASTIC_FILL, outline=COLOR_PLASTIC_OUTLINE, width=1)
-                draw.rectangle([sx - 6, sy_top - 3, sx + 6, sy_top + 3], fill=COLOR_PLASTIC_OUTLINE)
-                draw.rectangle([sx - 6, sy_bot - 3, sx + 6, sy_bot + 3], fill=COLOR_PLASTIC_OUTLINE)
-                draw.line([(sx - 4, sy_top), (sx + 4, sy_bot)], fill=COLOR_PLASTIC_DETAIL, width=1)
-                draw.line([(sx + 4, sy_top), (sx - 4, sy_bot)], fill=COLOR_PLASTIC_DETAIL, width=1)
 
     draw_bowtie(y_bay1, vhf_dx, vhf_dy, is_vhf=True)   # Bay 1 (VHF-High)
     draw_bowtie(y_bay2, uhf_dx, uhf_dy, is_vhf=False)  # Bay 2 (UHF)
@@ -613,7 +546,7 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     draw_bowtie(y_bay4, vhf_dx, vhf_dy, is_vhf=True)   # Bay 4 (VHF-High)
 
     # -------------------------------------------------------------------------
-    # FRONT VIEW DIMENSIONS & CALLOUTS (Harmonious Layout, Zero Overlaps)
+    # FRONT VIEW DIMENSIONS & CALLOUTS (Zero Overlaps)
     # -------------------------------------------------------------------------
     vhf_left_x = pl_x1 - vhf_dx   # ~126 px
     vhf_right_x = pl_x2 + vhf_dx  # ~1090 px
@@ -621,41 +554,40 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     uhf_right_x = pl_x2 + uhf_dx  # ~894 px
 
     # 1. Bay 1 VHF Span Dimension (Horizontal, top)
-    draw_dim_h(draw, vhf_left_x, vhf_right_x, 185.0,
+    draw_dim_h(draw, vhf_left_x, vhf_right_x, 180.0,
                "680.0 mm (VHF-HI TIP-TO-TIP SPAN)",
-               ext_y1=y_bay1 - vhf_dy - 5, ext_y2=178.0)
+               ext_y1=y_bay1 - vhf_dy - 6, ext_y2=173.0)
 
-    # 2. Bay 2 UHF Span Dimension (Horizontal, below Bay 2)
-    draw_dim_h(draw, uhf_left_x, uhf_right_x, y_feed_ctr - 55.0,
+    # 2. Bay 2 UHF Span Dimension (Horizontal, below Bay 2, above Center Feed)
+    draw_dim_h(draw, uhf_left_x, uhf_right_x, y_feed_ctr - 48.0,
                "400.0 mm (UHF SPAN)",
-               ext_y1=y_bay2 + uhf_dy + 4, ext_y2=y_feed_ctr - 48.0)
+               ext_y1=y_bay2 + uhf_dy + 5, ext_y2=y_feed_ctr - 42.0)
 
     # 3. Hanging Cap Eyelet Pitch (Horizontal)
     draw_dim_h(draw, X_CENTER - 15.0 * SCALE, X_CENTER + 15.0 * SCALE, y_cap_top - 18.0,
                "30.0 mm",
                ext_y1=y_cap_eyelet - 5, ext_y2=y_cap_top - 22.0)
 
-    # 4. Phase Line Spacing (Horizontal, at Bay 3/Feed)
-    draw_dim_h(draw, pl_x1, pl_x2, y_feed_ctr + 55.0,
+    # 4. Phase Line Spacing (Horizontal, below Center Feed)
+    draw_dim_h(draw, pl_x1, pl_x2, y_feed_ctr + 54.0,
                "25.0 mm",
-               ext_y1=y_feed_ctr + 25.0, ext_y2=y_feed_ctr + 62.0)
+               ext_y1=y_feed_ctr + 42.0, ext_y2=y_feed_ctr + 60.0)
 
     # 5. VHF Tip-to-Tip Tine Spread (Vertical, left of Bay 1 tip)
-    draw_dim_v(draw, y_bay1 - vhf_dy, y_bay1 + vhf_dy, 104.0,
+    draw_dim_v(draw, y_bay1 - vhf_dy, y_bay1 + vhf_dy, 102.0,
                ["150 mm", "TINE", "SPREAD"],
-               ext_x1=vhf_left_x - 5, ext_x2=97.0, font=FONT_SMALL_BOLD, text_offset_x=0.0)
+               ext_x1=vhf_left_x - 5, ext_x2=95.0, font=FONT_SMALL_BOLD, text_offset_x=0.0)
 
     # 6. UHF Tip-to-Tip Tine Spread (Vertical, left of Bay 2 tip)
-    draw_dim_v(draw, y_bay2 - uhf_dy, y_bay2 + uhf_dy, 290.0,
+    draw_dim_v(draw, y_bay2 - uhf_dy, y_bay2 + uhf_dy, 286.0,
                ["115 mm", "SPREAD"],
-               ext_x1=uhf_left_x - 5, ext_x2=283.0, font=FONT_SMALL_BOLD, text_offset_x=0.0)
+               ext_x1=uhf_left_x - 5, ext_x2=279.0, font=FONT_SMALL_BOLD, text_offset_x=0.0)
 
-    # 7. Active Bay Pitch Dimensions (Vertical, right side at X = 1098)
-    dim_pitch_x = 1098.0
+    # 7. Active Bay Pitch Dimensions (Vertical, right side at X = 1102)
+    dim_pitch_x = 1102.0
     draw_dim_v(draw, y_bay1, y_bay2, dim_pitch_x,
                ["130 mm", "PITCH"],
                ext_x1=X_CENTER + bw + 4, ext_x2=dim_pitch_x + 6, font=FONT_SMALL_BOLD, text_offset_x=0.0)
-    # Stagger middle pitch dimension vertically so it does not align horizontally with the 390 mm total active span
     draw_dim_v(draw, y_bay2, y_bay3, dim_pitch_x,
                ["130 mm", "PITCH"],
                ext_x1=X_CENTER + bw + 4, ext_x2=dim_pitch_x + 6, font=FONT_SMALL_BOLD, text_offset_x=0.0, text_offset_y=-35.0)
@@ -669,74 +601,67 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
                ["390 mm", "ACTIVE", "BAY SPAN"],
                ext_x1=dim_pitch_x + 8, ext_x2=dim_total_span_x + 6, font=FONT_SMALL_BOLD, text_offset_x=0.0)
 
-    # 9. Overall Antenna Height Envelope (Far left at X = 74)
-    draw_dim_v(draw, y_cap_top, y_bay4 + vhf_dy, 74.0,
+    # 9. Overall Antenna Height Envelope (Far left at X = 70)
+    draw_dim_v(draw, y_cap_top, y_bay4 + vhf_dy, 70.0,
                ["~560 mm", "OVERALL", "HEIGHT"],
-               ext_x1=94.0, ext_x2=66.0, font=FONT_SMALL_BOLD, text_offset_x=0.0)
+               ext_x1=92.0, ext_x2=62.0, font=FONT_SMALL_BOLD, text_offset_x=0.0)
 
-    # 10. Leader Callouts for features (Symmetrically distributed, perfectly isolated)
-    # Bay 1 VHF Bowtie (pointing to upper left arm)
-    draw_leader_callout(draw, vhf_left_x + 100, y_bay1 - vhf_dy * 0.7,
-                        vhf_left_x + 140, y_bay1 - vhf_dy - 25, vhf_left_x + 360,
+    # 10. Leader Callouts for features (Placed in open whitespace, zero line collisions)
+    # Bay 1 VHF Bowtie (pointing to upper left arm, text above arm)
+    draw_leader_callout(draw, vhf_left_x + 120, y_bay1 - vhf_dy * 0.65,
+                        vhf_left_x + 150, y_bay1 - vhf_dy - 22, vhf_left_x + 380,
                         ["BAY 1: VHF-HI BOWTIE (680 mm SPAN)", "340 mm ARM | 25.5° FLARE"])
 
-    # Bay 1 Triangular Tine Spreader (pointing to upper right spreader)
-    spreader_r_x = pl_x2 + spreader_dx
-    spreader_r_y = y_bay1 - spreader_dy
-    draw_leader_callout(draw, spreader_r_x, spreader_r_y,
-                        spreader_r_x + 35, spreader_r_y - 25, spreader_r_x + 230,
-                        ["TRIANGULAR TINE SPREADER", "R = 150 mm (DROOP MITIGATION)"])
-
-    # Full-Length Backing Strut (pointing to upper left backing strut on Bay 1)
-    sup_call_x = pl_x1 - vhf_dx * 0.5
-    sup_call_y = y_bay1 - vhf_dy * 0.5
-    draw_leader_callout(draw, sup_call_x, sup_call_y,
-                        sup_call_x - 35, sup_call_y - 30, sup_call_x - 225,
-                        ["FULL-LENGTH BACKING STRUT", "BT4V_Bowtie_Backing.stl (210×12×8 mm)", "QTY: 8 (2 PER BAY) | VOL: 2,400 mm³"])
+    # Full-Length Backing Strut (pointing to upper right VHF arm, cleanly inside x = 1090 extension line)
+    sup_r_x = pl_x2 + vhf_dx * 0.32
+    sup_r_y = y_bay1 - vhf_dy * 0.32
+    draw_leader_callout(draw, sup_r_x, sup_r_y,
+                        sup_r_x + 25, y_bay1 - vhf_dy - 22, sup_r_x + 265,
+                        ["FULL-LENGTH BACKING STRUTS (QTY: 24)", "BT4V_Bowtie_Backing.stl (180×12×8 mm)", "2 PER VHF ARM / 1 PER UHF ARM"])
 
     # Phase Crossover 1 (pointing to Crossover 1 from the left)
     draw_leader_callout(draw, X_CENTER - xow, y_xo1,
-                        X_CENTER - xow - 35, y_xo1 - 15, X_CENTER - xow - 215,
+                        X_CENTER - xow - 35, y_xo1 - 12, X_CENTER - xow - 225,
                         ["180° PHASE CROSSOVER", ">=5.0 mm DIELECTRIC ISOLATION"])
 
-    # Bay 2 UHF Bowtie (pointing to right arm)
+    # Bay 2 UHF Bowtie (pointing to upper right UHF arm)
     draw_leader_callout(draw, uhf_right_x - 50, y_bay2 - uhf_dy * 0.5,
-                        uhf_right_x + 30, y_bay2 - 40, uhf_right_x + 185,
+                        uhf_right_x + 25, y_bay2 - 42, uhf_right_x + 190,
                         ["BAY 2: UHF BOWTIE (400 mm SPAN)", "200 mm ARM | 32.5° FLARE"])
 
     # Center Feed Hub (pointing to Hub from the right side)
     draw_leader_callout(draw, X_CENTER + cfw, y_feed_ctr,
-                        X_CENTER + cfw + 40, y_feed_ctr, X_CENTER + cfw + 235,
+                        X_CENTER + cfw + 40, y_feed_ctr, X_CENTER + cfw + 245,
                         ["CENTER FEED HUB (300Ω BALANCED)", "RCA VH101R BALUN / 25 mm STUDS"])
 
-    # Bay 3 UHF Bowtie (pointing to right arm)
+    # Bay 3 UHF Bowtie (pointing to lower right UHF arm)
     draw_leader_callout(draw, uhf_right_x - 50, y_bay3 + uhf_dy * 0.5,
-                        uhf_right_x + 30, y_bay3 + 40, uhf_right_x + 185,
+                        uhf_right_x + 25, y_bay3 + 42, uhf_right_x + 190,
                         ["BAY 3: UHF BOWTIE (400 mm SPAN)", "200 mm ARM | 32.5° FLARE"])
 
-    # Phase Crossover 2 (pointing to Crossover 2 from the left)
+    # Phase Crossover 2 (pointing to Crossover 2 from the left, positioned cleanly below Bay 3 arm)
     draw_leader_callout(draw, X_CENTER - xow, y_xo2,
-                        X_CENTER - xow - 35, y_xo2 + 15, X_CENTER - xow - 215,
+                        X_CENTER - xow - 35, y_xo2 + 28, X_CENTER - xow - 225,
                         ["180° PHASE CROSSOVER", "TRANSPOSED 12 AWG PHASE BUS"])
 
     # Bay 4 VHF Bowtie (pointing to lower left arm)
-    draw_leader_callout(draw, vhf_left_x + 100, y_bay4 + vhf_dy * 0.7,
-                        vhf_left_x + 140, y_bay4 + vhf_dy + 30, vhf_left_x + 360,
+    draw_leader_callout(draw, vhf_left_x + 120, y_bay4 + vhf_dy * 0.65,
+                        vhf_left_x + 150, y_bay4 + vhf_dy + 35, vhf_left_x + 380,
                         ["BAY 4: VHF-HI BOWTIE (680 mm SPAN)", "340 mm ARM | 25.5° FLARE"])
 
-    # Bay 4 Triangular Tine Spreader (pointing to lower right spreader)
-    spreader_r4_x = pl_x2 + spreader_dx
-    spreader_r4_y = y_bay4 + spreader_dy
-    draw_leader_callout(draw, spreader_r4_x, spreader_r4_y,
-                        spreader_r4_x + 35, spreader_r4_y + 25, spreader_r4_x + 230,
-                        ["TRIANGULAR TINE SPREADER", "R = 150 mm (DROOP MITIGATION)"])
+    # Bay 4 Daisy-Chained Backing Struts (pointing to lower right VHF arm)
+    sup_r4_x = pl_x2 + vhf_dx * 0.52
+    sup_r4_y = y_bay4 + vhf_dy * 0.52
+    draw_leader_callout(draw, sup_r4_x, sup_r4_y,
+                        sup_r4_x + 30, y_bay4 + vhf_dy + 35, sup_r4_x + 265,
+                        ["DAISY-CHAINED VHF BACKING STRUTS", "LOCKS 25.5° FLARE ROOT-TO-TIP"])
 
     # Flare angle indicators (arcs)
-    draw.arc([pl_x2 + 20, y_bay1 - 25, pl_x2 + 70, y_bay1 + 25], start=-15, end=15, fill=COLOR_DIM_LINE, width=1)
-    draw.text((pl_x2 + 75, y_bay1 - 6), "25.5°", fill=COLOR_TEXT_CYAN, font=FONT_SMALL_BOLD)
+    draw.arc([pl_x2 + 25, y_bay1 - 22, pl_x2 + 75, y_bay1 + 22], start=-13, end=13, fill=COLOR_DIM_LINE, width=1)
+    draw.text((pl_x2 + 80, y_bay1 - 6), "25.5°", fill=COLOR_TEXT_CYAN, font=FONT_SMALL_BOLD)
 
-    draw.arc([pl_x2 + 20, y_bay2 - 25, pl_x2 + 70, y_bay2 + 25], start=-20, end=20, fill=COLOR_DIM_LINE, width=1)
-    draw.text((pl_x2 + 75, y_bay2 - 6), "32.5°", fill=COLOR_TEXT_CYAN, font=FONT_SMALL_BOLD)
+    draw.arc([pl_x2 + 25, y_bay2 - 22, pl_x2 + 75, y_bay2 + 22], start=-16, end=16, fill=COLOR_DIM_LINE, width=1)
+    draw.text((pl_x2 + 80, y_bay2 - 6), "32.5°", fill=COLOR_TEXT_CYAN, font=FONT_SMALL_BOLD)
 
     # -------------------------------------------------------------------------
     # SIDE PROFILE VIEW (View B)
@@ -747,7 +672,7 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     proj_ys = [y_cap_top, y_bay1, y_xo1, y_bay2, y_feed_ctr, y_bay3, y_xo2, y_bay4, y_bay4 + vhf_dy]
     for py in proj_ys:
         draw_dashed_line(draw, 1170, py, 1178, py, color=COLOR_PROJECTION, dash=2, gap=2, width=1)
-        draw_dashed_line(draw, 1198, py, 1260, py, color=COLOR_PROJECTION, dash=3, gap=3, width=1)
+        draw_dashed_line(draw, 1198, py, 1255, py, color=COLOR_PROJECTION, dash=3, gap=3, width=1)
 
     draw_centerline(draw, X_SIDE_CTR, 145, X_SIDE_CTR, 1210, color=COLOR_CENTERLINE, width=1)
 
@@ -755,7 +680,7 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     x_rear_spine = X_SIDE_CTR - 7.0 * SCALE   # Rear face of 14 mm spine strut
 
     # 1. Continuous Modular Spine Profile (14 mm depth)
-    draw.rectangle([x_rear_spine, y_bay1_top, x_front_face, y_bay4 + 20 * SCALE],
+    draw.rectangle([x_rear_spine, y_bay1_top, x_front_face, y_bay4 + bh],
                    fill=COLOR_PLASTIC_FILL, outline=COLOR_PLASTIC_DETAIL, width=1)
 
     # 2. Bay Brackets Side Profile (18 mm depth)
@@ -773,26 +698,34 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     draw.rectangle([x_rear_feed, y_feed_ctr - cfh, x_front_face, y_feed_ctr + cfh],
                    fill=COLOR_PLASTIC_FILL, outline=COLOR_PLASTIC_OUTLINE, width=2)
 
-    # Balun cradle cavity & RCA VH101R transformer body mounted on rear
-    x_balun_rear = x_rear_feed - 14.0 * SCALE
-    draw.rectangle([x_balun_rear, y_feed_ctr - 22 * SCALE, x_rear_feed, y_feed_ctr + 24 * SCALE],
+    # Balun cradle cavity & RCA VH101R transformer body seated in front (+Y) cradle
+    x_balun_in = x_front_face - 6.0 * SCALE
+    x_balun_front = x_front_face + 12.0 * SCALE
+    y_balun_top = y_feed_ctr - 18.0 * SCALE
+    y_balun_bot = y_feed_ctr + 20.0 * SCALE
+    draw.rectangle([x_balun_in, y_balun_top, x_balun_front, y_balun_bot],
                    fill=COLOR_BALUN_BODY, outline=COLOR_BALUN_ACCENT, width=2)
-    draw.text((x_balun_rear + 4, y_feed_ctr - 7), "VH101R", fill=COLOR_BALUN_ACCENT, font=FONT_TINY)
+    draw_dashed_line(draw, x_front_face, y_balun_top + 2, x_front_face, y_balun_bot - 2,
+                     color=COLOR_PLASTIC_DETAIL, dash=4, gap=3, width=1)
 
-    # Downward 75-ohm F-connector and RG6 coaxial downlead
-    f_conn_x = (x_balun_rear + x_rear_feed) / 2
-    draw.rectangle([f_conn_x - 4, y_feed_ctr + 24 * SCALE, f_conn_x + 4, y_feed_ctr + 24 * SCALE + 14],
+    # Downward 75-ohm F-connector and RG6 coaxial downlead (front +Y exit & strain relief)
+    f_conn_x = (x_balun_in + x_balun_front) / 2.0
+    y_fconn_bot = y_balun_bot + 12.0
+    draw.rectangle([f_conn_x - 4, y_balun_bot, f_conn_x + 4, y_fconn_bot],
                    fill=COLOR_BALUN_ACCENT, outline=COLOR_TEXT_WHITE)
+    x_coax_drop = x_front_face + 13.0 * SCALE
     coax_pts = [
-        (f_conn_x, y_feed_ctr + 24 * SCALE + 14),
-        (f_conn_x, y_feed_ctr + 24 * SCALE + 60),
-        (f_conn_x - 8, y_feed_ctr + 24 * SCALE + 120),
-        (f_conn_x - 10, y_bay4 + 100)
+        (f_conn_x, y_fconn_bot),
+        (f_conn_x, y_fconn_bot + 17.0),
+        (f_conn_x + 3.5, y_fconn_bot + 24.0),
+        (x_coax_drop - 3.5, y_fconn_bot + 32.0),
+        (x_coax_drop, y_fconn_bot + 40.0),
+        (x_coax_drop, y_bay4 + 90.0),
     ]
-    for i in range(len(coax_pts) - 1):
-        draw.line([coax_pts[i], coax_pts[i+1]], fill=COLOR_COAX, width=6)
-        draw.line([coax_pts[i], coax_pts[i+1]], fill=COLOR_COAX_HL, width=2)
-    draw.rectangle([f_conn_x - 6, y_feed_ctr + 24 * SCALE + 40, f_conn_x + 6, y_feed_ctr + 24 * SCALE + 44], fill=COLOR_TEXT_GOLD)
+    draw.line(coax_pts, fill=COLOR_COAX, width=6, joint="curve")
+    draw.line(coax_pts, fill=COLOR_COAX_HL, width=2, joint="curve")
+    y_ziptie = y_fconn_bot + 10.0
+    draw.rectangle([x_front_face - 3, y_ziptie, f_conn_x + 5, y_ziptie + 4], fill=COLOR_TEXT_GOLD)
 
     # 4. Top Hanging Cap Side Profile
     draw.polygon([
@@ -805,37 +738,37 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
                  fill=COLOR_BG, outline=COLOR_EYELET_RING, width=2)
     draw.line([(X_SIDE_CTR, y_cap_eyelet - 4), (X_SIDE_CTR, 155)], fill=COLOR_EYELET_RING, width=1)
 
-    # 5. Side View Dimensions & Callouts (Self-contained in View B)
+    # 5. Side View Dimensions & Callouts (Self-contained in View B, zero overlaps)
     draw_dim_h(draw, x_rear_feed, x_front_face, y_feed_ctr - cfh - 15,
                "24 mm FEED", ext_y1=y_feed_ctr - cfh - 2, ext_y2=y_feed_ctr - cfh - 20, font=FONT_SMALL_BOLD)
 
     draw_dim_h(draw, x_rear_bracket, x_front_face, y_bay2 - bh - 15,
                "18 mm BRKT", ext_y1=y_bay2 - bh - 2, ext_y2=y_bay2 - bh - 20, font=FONT_SMALL_BOLD)
 
-    draw_dim_h(draw, x_rear_spine, x_front_face, y_xo1 - xoh - 10,
-               "14 mm STRUT", ext_y1=y_xo1 - xoh - 2, ext_y2=y_xo1 - xoh - 15, font=FONT_SMALL_BOLD)
+    draw_dim_h(draw, x_rear_spine, x_front_face, y_xo1 - xoh - 12,
+               "14 mm STRUT", ext_y1=y_xo1 - xoh - 2, ext_y2=y_xo1 - xoh - 17, font=FONT_SMALL_BOLD)
 
-    # Balun callout (contained within View B left margin)
-    draw_leader_callout(draw, x_balun_rear, y_feed_ctr - 5,
-                        x_balun_rear - 15, y_feed_ctr - 25, x_balun_rear - 68,
+    # Balun callout (front +Y cradle on right side of View B, zero overlaps)
+    draw_leader_callout(draw, x_balun_front, y_feed_ctr - 4,
+                        x_balun_front + 14, y_feed_ctr - 10, x_balun_front + 86,
                         ["RCA VH101R", "BALUN"], font=FONT_SMALL_BOLD)
 
-    # Coax downlead callout (pointing to right side of View B)
-    draw_leader_callout(draw, f_conn_x, y_feed_ctr + 24 * SCALE + 50,
-                        f_conn_x + 30, y_feed_ctr + 24 * SCALE + 65, f_conn_x + 115,
+    # Coax downlead & zip-tie strain-relief callout (aligned cleanly below balun callout)
+    draw_leader_callout(draw, f_conn_x + 6, y_ziptie + 2,
+                        x_balun_front + 14, y_ziptie + 11, x_balun_front + 97,
                         ["75Ω RG6 COAX", "STRAIN RELIEF"], font=FONT_SMALL_BOLD)
 
     # -------------------------------------------------------------------------
     # RIGHT COLUMN: TABLES & TITLE BLOCK (Col 3, X: 1490 to 2162)
     # -------------------------------------------------------------------------
-    # 1. CHANNEL MAPPING & RF PERFORMANCE TABLE (Y: 100 to 570)
+    # 1. CHANNEL MAPPING & RF PERFORMANCE TABLE (Y: 100 to 575)
     p1_box = [1490, 100, 2162, 575]
     draw.rectangle(p1_box, fill=COLOR_PANEL_BG, outline=COLOR_PANEL_BORDER, width=1)
     draw.rectangle([1490, 100, 2162, 130], fill=COLOR_HEADER_BG, outline=COLOR_PANEL_BORDER)
     draw.text((1502, 106), "1. CHANNEL MAPPING & TARGET RF PERFORMANCE", fill=COLOR_TEXT_WHITE, font=FONT_PANEL_HDR)
 
-    tbl1_headers = ["Band / Service", "RF Ch Range", "Frequency Range", "Resonator Bay Element", "Nom Gain", "VSWR", "Polarisation"]
-    tbl1_widths = [110, 84, 110, 166, 68, 60, 68]
+    tbl1_headers = ["Band / Service", "RF Ch", "Freq Range", "Resonator Bay Element", "Nom Gain", "VSWR", "Polarisation"]
+    tbl1_widths = [112, 70, 114, 174, 68, 56, 70]
     tbl1_rows = [
         ["VHF-High TV", "Ch 7–13", "174–216 MHz", "Bay 1 & 4 (680 mm VHF)", "~3-4 dBi", "<2.0:1", "Horizontal"],
         ["UHF TV (Low)", "Ch 14–26", "470–542 MHz", "Bay 2 & 3 (400 mm UHF)", "~6-8 dBi", "<2.0:1", "Horizontal"],
@@ -856,12 +789,12 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
 
     rf_specs = [
         ("Broadband Frequency Coverage:", "VHF-High (Ch 7–13, 174–216 MHz) & UHF (Ch 14–36, 470–608 MHz)"),
-        ("Forward Broadside Gain:", "VHF-High: ~5.5 dBi | UHF: ~8.5 dBi (Equal front & back reception)"),
+        ("Forward Broadside Gain:", "VHF-High: ~3 to 4 dBi | UHF: ~6 to 8 dBi (Bi-directional broadside)"),
         ("Nominal Feedpoint Impedance:", "300 Ω Balanced transformed to 75 Ω Unbalanced via RCA VH101R"),
         ("Voltage Standing Wave Ratio:", "VSWR < 2.0:1 across entire VHF-Hi and UHF operating passband"),
-        ("Polarisation & Pattern:", "Pure Horizontal (0° X-Pol Loss) | Symmetrical 8-figure bidirectional"),
+        ("Polarisation & Pattern:", "Pure Horizontal (0° X-Pol Loss) | Symmetrical figure-8 bidirectional"),
         ("Array Feed Topology:", "Midpoint Balanced Feed between Bays 2 & 3; 180° crossover transposition"),
-        ("Active Structural Envelope:", "390 mm Active Bay Span, ~560 mm Overall Height (Window envelope <=600 mm)")
+        ("Active Structural Envelope:", "390 mm Active Bay Span (3 × 130 mm), ~560 mm Overall Height (<=600 mm)")
     ]
     spec_cur_y = rf_sub_y + 28
     for label, val in rf_specs:
@@ -878,7 +811,7 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     # Table 2A: Wire Bending Schedule
     draw.text((1502, 622), "A. 12 AWG SOLID COPPER WIRE CUTTING & FORMING SCHEDULE", fill=COLOR_TEXT_GOLD, font=FONT_SUBHDR)
     tbl2a_headers = ["Conductor Element", "Qty", "Cut Length", "Arm Length", "Flare Angle", "Finished Span"]
-    tbl2a_widths = [190, 40, 94, 150, 90, 100]
+    tbl2a_widths = [164, 38, 84, 148, 84, 146]
     tbl2a_rows = [
         ["VHF-High Whiskers", "4", "690 mm", "340 mm + 10 mm apex", "25.5°", "680 mm (150 mm Tine)"],
         ["UHF Whiskers", "4", "410 mm", "200 mm + 10 mm apex", "32.5°", "400 mm (115 mm Tine)"],
@@ -892,11 +825,11 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     # Table 2B: Fasteners & Balun Hardware
     draw.text((1502, 642 + tbl2a_h + 8), "B. FASTENERS, JOINING HARDWARE & BALUN COMPONENT", fill=COLOR_TEXT_GOLD, font=FONT_SUBHDR)
     tbl2b_headers = ["Hardware Item", "Qty", "Specification", "Application & Mounting Location"]
-    tbl2b_widths = [160, 40, 194, 270]
+    tbl2b_widths = [138, 36, 198, 292]
     tbl2b_rows = [
-        ["Machine Screws", "10", "M4 x 16 mm Stainless Pan Head", "Whisker apex clamps (8) & Balun feed studs (2)"],
-        ["Captive Hex Nuts", "10", "M4 Stainless Steel (7.2 mm AF)", "Retained in rear captive pockets of brackets & hub"],
-        ["Joint Cross-Pins", "10", "Ø2.5 mm x 18 mm / M2.5 screws", "Secures tenon/mortise modular spine interlocks"],
+        ["Hex-Head Bolts", "10", "M4 x 20 mm Hex Bolt + Washer", "Whisker apex clamps (8) & Balun feed studs (2)"],
+        ["Captive Hex Nuts", "10", "M4 Stainless Steel (7.2 mm AF)", "Retained in rear hex pockets of brackets & hub"],
+        ["Joint Cross-Pins", "8–10", "Ø2.5 mm Pin / M2.5 x 12 Screw", "Secures 7 tenon/mortise spine joints (+ spares)"],
         ["Commercial Balun", "1", "RCA VH101R 300:75Ω Outdoor", "Snaps into center cradle; spade lugs to M4 studs"]
     ]
     tbl2b_align = ['left', 'center', 'left', 'left']
@@ -909,11 +842,11 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     tbl2c_headers = ["Component Name", "STL Deliverable File", "Qty", "Bounding Extents", "Volume"]
     tbl2c_widths = [174, 180, 40, 170, 100]
     tbl2c_rows = [
-        ["Center Feed Hub", "BT4V_Center_Feed.stl", "1", "40.0 x 24.0 x 70.0 mm", "28,500 mm³"],
+        ["Center Feed Hub", "BT4V_Center_Feed.stl", "1", "40.0 x 24.0 x 110.0 mm", "42,000 mm³"],
         ["Whisker Bay Bracket", "BT4V_Bay_Bracket.stl", "4", "50.0 x 18.0 x 40.0 mm", "19,200 mm³"],
-        ["Modular Spine Segment", "BT4V_Spine_Segment.stl", "4", "20.0 x 14.0 x 120.0 mm", "16,800 mm³"],
+        ["Modular Spine Segment", "BT4V_Spine_Segment.stl", "2", "30.0 x 14.0 x 110.0 mm", "21,000 mm³"],
         ["Phase Crossover Spacer", "BT4V_Phase_Crossover.stl", "2", "35.0 x 12.0 x 30.0 mm", "6,100 mm³"],
-        ["Full-Length Backing Strut", "BT4V_Bowtie_Backing.stl", "8", "210.0 x 12.0 x 8.0 mm", "2,400 mm³"],
+        ["Full-Length Backing Strut", "BT4V_Bowtie_Backing.stl", "24", "180.0 x 12.0 x 8.0 mm", "2,200 mm³"],
         ["Top Hanging Cap", "BT4V_Hanging_Cap.stl", "1", "44.0 x 18.0 x 30.0 mm", "7,400 mm³"],
         ["Fit Calibration Coupon", "BT4V_Fit_Coupon.stl", "1", "90.0 x 50.0 x 10.0 mm", "26,500 mm³"]
     ]
@@ -940,7 +873,7 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     draw.text((1502, 1190), "DWG-BT4V-001", fill=COLOR_TEXT_WHITE, font=FONT_BOLD)
 
     draw.text((1502, 1215), "REVISION:", fill=COLOR_TEXT_MUTED, font=FONT_SMALL)
-    draw.text((1502, 1230), "v0.3.0 (INITIAL RELEASE)", fill=COLOR_TEXT_GOLD, font=FONT_BOLD)
+    draw.text((1502, 1230), "v0.3.0 (PRODUCTION BASELINE)", fill=COLOR_TEXT_GOLD, font=FONT_BOLD)
 
     draw.text((1502, 1255), "SYSTEM SHEET:", fill=COLOR_TEXT_MUTED, font=FONT_SMALL)
     draw.text((1502, 1270), "SHEET 1 OF 1 (COMPLETE)", fill=COLOR_TEXT_WHITE, font=FONT_BOLD)
@@ -949,7 +882,7 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     draw.text((1502, 1310), "2200 x 1500 PIXELS", fill=COLOR_TEXT_CYAN, font=FONT_MONO_BOLD)
 
     draw.text((1502, 1335), "CLASSIFICATION:", fill=COLOR_TEXT_MUTED, font=FONT_SMALL)
-    draw.text((1502, 1350), "OPEN SOURCE HARDWARE", fill=COLOR_TEXT_WHITE, font=FONT_SMALL_BOLD)
+    draw.text((1502, 1350), "PROPRIETARY — ALL RIGHTS RSVD", fill=COLOR_TEXT_WHITE, font=FONT_SMALL_BOLD)
 
     draw.text((1502, 1375), "CAD ENVIRONMENT:", fill=COLOR_TEXT_MUTED, font=FONT_SMALL)
     draw.text((1502, 1390), "FreeCAD Part API / Python 3", fill=COLOR_TEXT_CYAN, font=FONT_SMALL)
@@ -959,7 +892,7 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     draw.text((1712, 1190), "1:1.4 (ELEVATION VIEWS)", fill=COLOR_TEXT_WHITE, font=FONT_BOLD)
 
     draw.text((1712, 1215), "LINEAR UNITS / ANGLES:", fill=COLOR_TEXT_MUTED, font=FONT_SMALL)
-    draw.text((1712, 1230), "MILLIMETERS [mm] / DEGREES [°]", fill=COLOR_TEXT_WHITE, font=FONT_BOLD)
+    draw.text((1712, 1230), "MILLIMETERS [mm] / DEGREES [°]", fill=COLOR_TEXT_WHITE, font=FONT_SMALL_BOLD)
 
     draw.text((1712, 1255), "ORTHOGRAPHIC PROJECTION:", fill=COLOR_TEXT_MUTED, font=FONT_SMALL)
     draw.text((1712, 1270), "THIRD ANGLE PROJECTION", fill=COLOR_TEXT_WHITE, font=FONT_SMALL_BOLD)
@@ -980,14 +913,14 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     draw.line([(1760, sym_y), (1805, sym_y)], fill=COLOR_CENTERLINE, width=1)
 
     draw.text((1712, 1365), "SURFACE FINISH / INFILL:", fill=COLOR_TEXT_MUTED, font=FONT_SMALL)
-    draw.text((1712, 1380), "0.20 mm Layer / 25% Gyroid", fill=COLOR_TEXT_WHITE, font=FONT_SMALL)
+    draw.text((1712, 1380), "0.20 mm Layer / 30% Gyroid", fill=COLOR_TEXT_WHITE, font=FONT_SMALL)
 
     # Col C:
     draw.text((1922, 1175), "AUTHOR / DESIGN TEAM:", fill=COLOR_TEXT_MUTED, font=FONT_SMALL)
     draw.text((1922, 1190), "OpenCode BT4-V Engineering", fill=COLOR_TEXT_WHITE, font=FONT_BOLD)
 
     draw.text((1922, 1215), "RELEASE DATE:", fill=COLOR_TEXT_MUTED, font=FONT_SMALL)
-    draw.text((1922, 1230), "2026-11-07", fill=COLOR_TEXT_WHITE, font=FONT_BOLD)
+    draw.text((1922, 1230), "2026-11-15", fill=COLOR_TEXT_WHITE, font=FONT_BOLD)
 
     draw.text((1922, 1255), "TARGET MATERIAL:", fill=COLOR_TEXT_MUTED, font=FONT_SMALL)
     draw.text((1922, 1270), "PETG (UV Stable) / Copper 12 AWG", fill=COLOR_TEXT_GOLD, font=FONT_BOLD)
@@ -1004,7 +937,7 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     # Bottom Copyright & Notice Bar
     draw.rectangle([1490, 1410, 2162, 1462], fill=(10, 26, 52), outline=COLOR_PANEL_BORDER, width=1)
     draw.text((1504, 1422), "NOTICE: SPECIFICATIONS ARE AUTHORITATIVE PER REQUIREMENTS.MD (§3–§16).", fill=COLOR_TEXT_MUTED, font=FONT_TINY)
-    draw.text((1504, 1438), "ALL RECEPTIVE ELEMENTS OPTIMIZED FOR UNIVERSAL VHF-HIGH & UHF DTV STANDARDS.", fill=COLOR_TEXT_MUTED, font=FONT_TINY)
+    draw.text((1504, 1438), "PROPRIETARY — COPYRIGHT (C) 2026 ZERO4281. ALL RIGHTS RESERVED.", fill=COLOR_TEXT_MUTED, font=FONT_TINY)
 
     # -------------------------------------------------------------------------
     # BOTTOM STRIP: GENERAL FABRICATION NOTES (X: 42 to 1475, Y: 1245 to 1462)
@@ -1020,9 +953,9 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     draw.text((56, 1282), "1. 3D PRINTING & MATERIAL STANDARDS", fill=COLOR_TEXT_GOLD, font=FONT_SUBHDR)
     col1_notes = [
         "• Material: Print with PETG (recommended for UV and indoor window thermal",
-        "  stability) or high-temp PLA. Bed adhesion: PEI sheet with brim.",
-        "• Slicer Configuration: 0.20 mm layer height, 4 perimeter walls, 5 top/bottom",
-        "  solid layers, and 25% gyroid infill for rigid load transfer.",
+        "  stability) or PLA. Bed adhesion: PEI sheet with skirt/brim.",
+        "• Slicer Configuration: 0.20 mm layer height, 3 perimeter walls, 4 top/bottom",
+        "  solid layers, and 30% gyroid infill for rigid load transfer.",
         "• Calibration Coupon: Print BT4V_Fit_Coupon.stl first to verify 12 AWG wire snap,",
         "  M4 nut pocket clearance, 25 mm feed pitch, and tenon/mortise interlocking.",
         "• Cross-Pin Locking: Lock modular spine tenon joints with Ø2.5 mm cross-pins."
@@ -1033,7 +966,7 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
         ny += 16
 
     # Column 2 Notes
-    draw.text((520, 1282), "2. WIRE BENDING & PHASE TRANSPOSITION", fill=COLOR_TEXT_GOLD, font=FONT_SUBHDR)
+    draw.text((520, 1282), "2. WIRE BENDING, BACKING STRUTS & PHASING", fill=COLOR_TEXT_GOLD, font=FONT_SUBHDR)
     col2_notes = [
         "• Conductor: 12 AWG solid copper wire (nominal conductor diameter 2.05 mm).",
         "  Strip THHN insulation at terminal clamping zones or use bare copper.",
@@ -1041,8 +974,8 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
         "  for VHF (690 mm wire) and 32.5° flare angle for UHF (410 mm wire).",
         "• Crossover Transposition: Install Phase Crossover Spacers between Bays 1–2",
         "  and Bays 3–4 (180° inversion). Ensures >=5.0 mm solid dielectric isolation.",
-        "• Anti-Droop Spreaders: Snap Triangular Tine Spreaders onto VHF whiskers at",
-        "  150 mm radius from apex. Eliminates gravitational sag and wind flutter."
+        "• Full-Length Backing Struts: Snap 1 strut onto each 200 mm UHF arm (8 pcs) and",
+        "  2 daisy-chained struts onto each 340 mm VHF arm (16 pcs) to lock flare angles."
     ]
     ny = 1302
     for line in col2_notes:
@@ -1070,10 +1003,11 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     # EXPORT & VERIFICATION
     # -------------------------------------------------------------------------
     print(f"[bt4v_drawing] Saving 2D technical drawing to: {output_path}")
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    out_dir = os.path.dirname(output_path)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
     img.save(output_path, "PNG", optimize=True)
 
-    # Verify deliverable file
     if not os.path.exists(output_path):
         raise FileNotFoundError(f"Export failed: {output_path} does not exist.")
 
@@ -1089,19 +1023,55 @@ def generate_drawing(output_path: str = OUTPUT_PATH) -> bool:
     if dims != (CANVAS_WIDTH, CANVAS_HEIGHT):
         raise ValueError(f"Image dimension mismatch: got {dims}, expected ({CANVAS_WIDTH}, {CANVAS_HEIGHT})")
 
-    if file_size < MIN_FILE_SIZE_BYTES:
-        raise ValueError(f"Image file size too small: {file_size} bytes (minimum {MIN_FILE_SIZE_BYTES} bytes)")
+    if file_size <= MIN_FILE_SIZE_BYTES:
+        raise ValueError(f"Image file size too small: {file_size} bytes (must exceed {MIN_FILE_SIZE_BYTES} bytes)")
 
     print("[bt4v_drawing] 2D technical drawing generation complete: SUCCESS (Exit 0)")
     return True
 
 
+# -----------------------------------------------------------------------------
+# CLI ARGUMENT PARSER (Plan.md §4 Exit Code Contract)
+# -----------------------------------------------------------------------------
+def parse_args(argv=None) -> str:
+    """Parse CLI arguments; return output PNG path or exit 0 (--help) / 2 (invalid CLI args)."""
+    if argv is None:
+        argv = sys.argv[1:]
+
+    positional = []
+    for arg in argv:
+        if arg in ("-h", "--help"):
+            print((__doc__ or "").strip(), flush=True)
+            sys.exit(0)
+        if arg.startswith("-"):
+            print(f"[bt4v_drawing] ERROR: Unrecognized CLI flag: {arg}", file=sys.stderr, flush=True)
+            sys.exit(2)
+        positional.append(arg)
+
+    if len(positional) > 1:
+        print(
+            f"[bt4v_drawing] ERROR: Expected at most 1 positional output_path argument, got {len(positional)}: {positional}",
+            file=sys.stderr,
+            flush=True,
+        )
+        sys.exit(2)
+
+    if len(positional) == 1:
+        if not positional[0].strip():
+            print("[bt4v_drawing] ERROR: Output path argument must not be empty.", file=sys.stderr, flush=True)
+            sys.exit(2)
+        return positional[0]
+
+    return os.environ.get("OUT_PATH", OUTPUT_PATH)
+
+
 if __name__ == "__main__":
+    out_target = parse_args(sys.argv[1:])
     try:
-        success = generate_drawing()
+        success = generate_drawing(out_target)
         sys.exit(0 if success else 1)
     except Exception as exc:
-        print(f"[bt4v_drawing] ERROR: {exc}", file=sys.stderr)
+        print(f"[bt4v_drawing] ERROR: {exc}", file=sys.stderr, flush=True)
         import traceback
         traceback.print_exc()
         sys.exit(1)

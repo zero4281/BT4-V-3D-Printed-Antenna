@@ -27,9 +27,9 @@ Mechanical & RF Features:
   routing the rear transposed wire cleanly between front and rear planes.
 
 Run headless:
-    /snap/bin/freecad.cmd -c python/bt4v_phase_crossover.py
+    /snap/bin/freecad.cmd python/bt4v_phase_crossover.py
 or:
-    freecadcmd -c python/bt4v_phase_crossover.py
+    freecadcmd python/bt4v_phase_crossover.py
 """
 
 import math
@@ -420,20 +420,22 @@ def verify_shape(shape, label, expected_extents, expected_volume, out_path):
 def parse_args():
     """Parse command line arguments and environment variables."""
     out_path = os.environ.get("OUT_PATH", DEFAULT_OUT)
+    if any(arg in ("-h", "--help") for arg in sys.argv):
+        print(__doc__, flush=True)
+        sys.exit(0)
     for i, arg in enumerate(sys.argv):
-        if arg in ("-h", "--help"):
-            print(__doc__)
-            sys.exit(0)
-        if arg.endswith("bt4v_phase_crossover.py") and i + 1 < len(sys.argv):
-            candidate = sys.argv[i + 1]
-            if candidate.startswith("-"):
-                print(
-                    "ERROR: Unrecognized or invalid parameter flag: %s" % candidate,
-                    file=sys.stderr,
-                    flush=True,
-                )
-                sys.exit(2)
-            out_path = candidate
+        if arg.endswith("bt4v_phase_crossover.py"):
+            extra = [a for a in sys.argv[i + 1 :] if a not in ("--", "--pass")]
+            for candidate in extra:
+                if candidate.startswith("-"):
+                    print(
+                        "ERROR: Unrecognized or invalid parameter flag: %s" % candidate,
+                        file=sys.stderr,
+                        flush=True,
+                    )
+                    sys.exit(2)
+            if extra:
+                out_path = extra[0]
             break
     return out_path
 
@@ -463,3 +465,5 @@ except Exception as exc:
     print("ERROR: BT4-V Phase Crossover Spacer generation failed: %r" % (exc,), file=sys.stderr, flush=True)
     traceback.print_exc()
     sys.exit(1)
+
+sys.exit(0)
