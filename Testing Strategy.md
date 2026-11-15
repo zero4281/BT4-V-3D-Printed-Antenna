@@ -1,8 +1,8 @@
 # BT4-V Testing Strategy
 
-**Version:** 0.1.0  
-**Applies to:** BT4-V 3D Printed Antenna, revision v0.1.0  
-**Requirements baseline:** `Requirements.md` v0.1.0  
+**Version:** 0.3.0  
+**Applies to:** BT4-V 3D Printed Antenna, revision v0.3.0  
+**Requirements baseline:** `Requirements.md` v0.3.0  
 
 ---
 
@@ -12,7 +12,7 @@ BT4-V is a physical 3D modelling, CAD script generation, and fabrication project
 There is **no unit-test framework and no automated software unit-test suite**, and none is required.
 
 Verification is divided into two distinct tiers:
-1. **Automated CAD & Build Regression Testing:** Validated via the headless build orchestrator `bt4v_generate_all.sh` and python scripts in `python/`. This verifies solid validity, bounding box extents, volume baselines, non-zero failure exits, and image rendering.
+1. **Automated CAD & Build Regression Testing:** Validated via the headless build orchestrator `bt4v_generate_all.sh` and Python scripts in `python/`. This verifies solid validity, bounding box extents, volume baselines, non-zero failure exits, and image rendering.
 2. **Physical Human-Gated Acceptance Testing:** Carried out by the builder during printing, assembly, and television reception verification. These tests cannot be completed by an automated agent without explicit builder confirmation.
 
 ---
@@ -40,21 +40,21 @@ Every full regression run must verify the following automated criteria:
      - `BT4V_Bay_Bracket.stl`
      - `BT4V_Spine_Segment.stl`
      - `BT4V_Phase_Crossover.stl`
-     - `BT4V_Whisker_Spreader.stl`
+     - `BT4V_Bowtie_Backing.stl`
      - `BT4V_Hanging_Cap.stl`
      - `BT4V_Fit_Coupon.stl`
    - Both PNG deliverables exist at the repository root:
      - `BT4-V 2D Drawing.png`
      - `BT4-V Parts Preview.png`
 2. **Solid Validity & Geometry Baselines:**
-   - Every STL must represent exactly **1 solid**, with `Valid: True`.
+   - Every STL must represent exactly **1 solid** (`len(shape.Solids) == 1`, `len(shape.Shells) == 1`), with `Valid: True`.
    - Measured bounding boxes must match nominal dimensions within **±0.1 mm**.
    - Measured volumes must agree with the baseline table in `Requirements.md` §16.3 within **±2%**.
 3. **Exit Code Propagation:**
    - Generators must return `0` on successful export.
    - Any failure (invalid parameters, failed FreeCAD boolean cut/fuse, missing output directory) must terminate with non-zero exit code (`1` or `2`).
 4. **Drawing & Preview Integrity:**
-   - `bt4v_drawing.py` and `bt4v_preview.py` must run without error and generate non-empty (>10 kB) PNG files matching their target pixel resolutions.
+   - `bt4v_drawing.py` and `bt4v_preview.py` must run without error and generate non-empty (>10 kB) PNG files matching their target pixel resolutions (`2200 × 1500` and `1800 × 800`).
 
 ---
 
@@ -64,21 +64,22 @@ Physical acceptance items must be evaluated and confirmed by the builder:
 
 ### 3.1 Step 1 — Fit Coupon Verification
 Print `stl/BT4V_Fit_Coupon.stl` first on the target printer and profile:
-- **Wire fit:** Test 12 AWG solid copper wire in friction and snap channels. Confirm wire snaps in firmly without loose play.
+- **Wire fit:** Test 12 AWG solid copper wire in friction and C-clip snap channels. Confirm wire snaps in firmly without loose play.
 - **Hardware fit:** Verify M4 hex bolts slide smoothly through clearance holes and M4 hex nuts seat firmly into captured pockets.
-- **Balun terminal fit:** Check 25 mm post spacing against RCA VH101R spade lugs.
-- **Joint tolerances:** Check tenon/mortise fit and 2.5 mm cross-pin alignment.
-- **Decision:** If tolerances are too tight/loose, adjust generator parameters in `python/` and regenerate before committing production prints.
+- **Balun terminal fit:** Check 25.0 mm post spacing against RCA VH101R spade lugs.
+- **Joint tolerances:** Check spine tenon/mortise fit, backing-strut root socket fit, and 2.5 mm cross-pin alignment.
+- **Decision:** If tolerances are too tight/loose, adjust slicer horizontal expansion or generator parameters in `python/` and regenerate before committing production prints.
 
-### 3.2 Step 2 — Whisker Bending & Spreader Rigidity
-- Cut and bend 12 AWG solid copper wire for UHF (410 mm cut, 32.5° flare) and VHF (690 mm cut, 25.5° flare).
-- Snap `BT4V_Whisker_Spreader.stl` onto the VHF whiskers at ~150 mm radius.
-- **Droop test:** Mount whisker in bay bracket and hold horizontally. Confirm that the triangular tine spreader prevents wire sagging under gravity.
+### 3.2 Step 2 — Whisker Bending & Full-Length Backing Strut Rigidity
+- Cut and bend 12 AWG solid copper wire for UHF (410 mm cut, 32.5° flare, 200 mm arms) and VHF (690 mm cut, 25.5° flare, 340 mm arms).
+- Snap **1 × `BT4V_Bowtie_Backing.stl`** onto each of the 8 UHF whisker arms (8 pcs) and **2 × daisy-chained `BT4V_Bowtie_Backing.stl`** onto each of the 8 VHF whisker arms (16 pcs, 24 total), locking their root tenons into the Bay Bracket lateral sockets.
+- **Droop test:** Mount whisker assembly in bay bracket and hold horizontally. Confirm that the continuous full-length backing struts lock the flare angle and eliminate wire sagging under gravity from root to tip.
 
-### 3.3 Step 3 — Balun Cradle & Assembly
-- Assemble the modular spine (Center Feed + 4 Spine Segments + 4 Bay Brackets + Hanging Cap).
+### 3.3 Step 3 — Balun Cradle & Modular Spine Assembly
+- Assemble the modular spine (Top Hanging Cap + Bay Bracket 1 + Spine Segment 1 + Bay Bracket 2 + Center Feed Hub + Bay Bracket 3 + Spine Segment 2 + Bay Bracket 4) and lock joints with 2.5 mm cross-pins.
+- Verify that all adjacent bay centers sit at the exact **130.0 mm** pitch (`390.0 mm` active array height).
 - Verify that the **RCA VH101R** matching transformer snaps snugly into the Center Feed cradle.
-- Confirm phase lines route through crossover clips with ≥5 mm separation between crossing conductors.
+- Confirm straight-through 25.0 mm phase lines route through crossover clips with ≥5.0 mm separation between crossing conductors.
 
 ### 3.4 Step 4 — Reception & Signal Quality Verification
 - Suspend assembled antenna in target window using dual hanging eyelets.

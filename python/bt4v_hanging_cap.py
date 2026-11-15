@@ -28,9 +28,9 @@ Mechanical & RF Features:
   providing clearance for suspension cords and hook hardware.
 
 Run headless:
-    /snap/bin/freecad.cmd -c python/bt4v_hanging_cap.py
+    /snap/bin/freecad.cmd python/bt4v_hanging_cap.py
 or:
-    freecadcmd -c python/bt4v_hanging_cap.py
+    freecadcmd python/bt4v_hanging_cap.py
 """
 
 import math
@@ -346,20 +346,22 @@ def verify_shape(shape, label, expected_extents, expected_volume, out_path):
 def parse_args():
     """Parse command line arguments and environment variables."""
     out_path = os.environ.get("OUT_PATH", DEFAULT_OUT)
+    if any(arg in ("-h", "--help") for arg in sys.argv):
+        print(__doc__, flush=True)
+        sys.exit(0)
     for i, arg in enumerate(sys.argv):
-        if arg in ("-h", "--help"):
-            print(__doc__)
-            sys.exit(0)
-        if arg.endswith("bt4v_hanging_cap.py") and i + 1 < len(sys.argv):
-            candidate = sys.argv[i + 1]
-            if candidate.startswith("-"):
-                print(
-                    "ERROR: Unrecognized or invalid parameter flag: %s" % candidate,
-                    file=sys.stderr,
-                    flush=True,
-                )
-                sys.exit(2)
-            out_path = candidate
+        if arg.endswith("bt4v_hanging_cap.py"):
+            extra = [a for a in sys.argv[i + 1 :] if a not in ("--", "--pass")]
+            for candidate in extra:
+                if candidate.startswith("-"):
+                    print(
+                        "ERROR: Unrecognized or invalid parameter flag: %s" % candidate,
+                        file=sys.stderr,
+                        flush=True,
+                    )
+                    sys.exit(2)
+            if extra:
+                out_path = extra[0]
             break
     return out_path
 

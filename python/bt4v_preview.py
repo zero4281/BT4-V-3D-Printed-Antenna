@@ -7,31 +7,13 @@ Generates the master 3D printable parts preview deliverable:
 
 Technical Specifications & Requirements Baseline:
 - Requirements Baseline: Requirements.md §5–§11, §12.2, §16.3
-- Plan Baseline: Plan.md §3.1 (T1.3)
 - Deliverable: Exactly 1800 x 800 px PNG image, >10 kB file size.
 - Theme: High-contrast, clean modern rendering theme:
   Dark charcoal (#161B22) background, card containers (#21262D),
-  crisp line art, shaded isometric 3D views for parts.
-
-Visual & Technical Content:
-1. Title banner: "BT4-V 3D PRINTED ANTENNA — 3D PRINTABLE PARTS PREVIEW",
-   Revision v0.3.0, Total Print Mass ~200 g.
-2. Multi-panel layout clearly showcasing all 8 printable BT4-V parts + assembly:
-   - Part 1: Center Feed Hub (1 required, 40 × 24 × 70 mm, 28,500 mm³)
-   - Part 2: Whisker Bay Bracket (4 required, 50 × 18 × 40 mm, 19,200 mm³)
-   - Part 3: Spine Segment (4 required, 20 × 14 × 120 mm, 16,800 mm³)
-   - Part 4: Phase Crossover Spacer (2 required, 35 × 12 × 30 mm, 6,100 mm³)
-   - Part 5: Triangular Tine Spreader (4 required, 72 × 12 × 8 mm, 2,200 mm³)
-   - Part 6: Bowtie Support Strut (8 required, 65 × 10 × 8 mm, 1,800 mm³)
-   - Part 7: Top Hanging Cap (1 required, 44 × 18 × 30 mm, 7,400 mm³)
-   - Part 8: Fit Calibration Coupon (1 required, 90 × 50 × 10 mm, 26,500 mm³)
-   - Part 9: Modular Spine Assembly Stack (17 printed pieces total, ~200 g set)
-3. Descriptive callout annotations, dimensions, and quantity badges on each panel.
-4. Assembly locations along the spine indicated on each panel.
-5. Print settings summary banner (PETG recommended, 0.2 mm layer height, 3 perimeters, 25-30% infill).
+  crisp line art, shaded isometric 3D views for all 7 printable STL parts + assembly.
 
 Usage:
-    python3 python/bt4v_preview.py
+    python3 python/bt4v_preview.py [-h | --help] [output_path]
 """
 
 import math
@@ -49,7 +31,7 @@ OUTPUT_PATH = os.path.join(PROJECT_ROOT, OUTPUT_FILENAME)
 
 CANVAS_WIDTH = 1800
 CANVAS_HEIGHT = 800
-MIN_FILE_SIZE_BYTES = 10 * 1024  # >10 kB per Testing Strategy §2.4
+MIN_FILE_SIZE_BYTES = 10 * 1024  # >10 kB per Testing Strategy §2.2
 
 # -----------------------------------------------------------------------------
 # COLOR PALETTE (Clean Modern Dark Charcoal Theme)
@@ -169,7 +151,6 @@ class Camera:
 class Mesh3D:
     """3D polygon mesh container supporting depth-sorted shaded rendering."""
     def __init__(self):
-        # List of (points_3d, normal_3d, base_color, edge_color, line_width, depth_bias)
         self.faces = []
 
     def add_face(self, pts, normal, base_col, edge_col=COLOR_PLASTIC_EDGE, lw=1, bias=0.0):
@@ -177,30 +158,19 @@ class Mesh3D:
 
     def add_box(self, x0, y0, z0, dx, dy, dz, base_col=COLOR_PLASTIC_BASE, edge_col=COLOR_PLASTIC_EDGE, lw=1, bias=0.0):
         x1, y1, z1 = x0 + dx, y0 + dy, z0 + dz
-        # Top (+Z)
         self.add_face([(x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1)], (0, 0, 1), base_col, edge_col, lw, bias)
-        # Bottom (-Z)
         self.add_face([(x0, y0, z0), (x0, y1, z0), (x1, y1, z0), (x1, y0, z0)], (0, 0, -1), base_col, edge_col, lw, bias)
-        # Front (-Y)
         self.add_face([(x0, y0, z0), (x1, y0, z0), (x1, y0, z1), (x0, y0, z1)], (0, -1, 0), base_col, edge_col, lw, bias)
-        # Back (+Y)
         self.add_face([(x1, y1, z0), (x0, y1, z0), (x0, y1, z1), (x1, y1, z1)], (0, 1, 0), base_col, edge_col, lw, bias)
-        # Right (+X)
         self.add_face([(x1, y0, z0), (x1, y1, z0), (x1, y1, z1), (x1, y0, z1)], (1, 0, 0), base_col, edge_col, lw, bias)
-        # Left (-X)
         self.add_face([(x0, y1, z0), (x0, y0, z0), (x0, y0, z1), (x0, y1, z1)], (-1, 0, 0), base_col, edge_col, lw, bias)
 
     def add_cavity(self, x0, y0, z0, dx, dy, dz, cav_col=COLOR_CAVITY_FILL, edge_col=COLOR_CAVITY_EDGE, lw=1, bias=-6.0):
         x1, y1, z1 = x0 + dx, y0 + dy, z0 + dz
-        # Back of cavity facing viewer (normal = 0, -1, 0)
         self.add_face([(x0, y1, z0), (x1, y1, z0), (x1, y1, z1), (x0, y1, z1)], (0, -1, 0), cav_col, edge_col, lw, bias)
-        # Bottom of cavity facing up (normal = 0, 0, 1)
         self.add_face([(x0, y0, z0), (x1, y0, z0), (x1, y1, z0), (x0, y1, z0)], (0, 0, 1), cav_col, edge_col, lw, bias)
-        # Top of cavity facing down (normal = 0, 0, -1)
         self.add_face([(x0, y0, z1), (x0, y1, z1), (x1, y1, z1), (x1, y0, z1)], (0, 0, -1), cav_col, edge_col, lw, bias)
-        # Left wall facing right (normal = 1, 0, 0)
         self.add_face([(x0, y0, z0), (x0, y1, z0), (x0, y1, z1), (x0, y0, z1)], (1, 0, 0), cav_col, edge_col, lw, bias)
-        # Right wall facing left (normal = -1, 0, 0)
         self.add_face([(x1, y1, z0), (x1, y0, z0), (x1, y0, z1), (x1, y1, z1)], (-1, 0, 0), cav_col, edge_col, lw, bias)
 
     def add_cylinder_z(self, cx, cy, z0, z1, radius, sides=12, base_col=COLOR_STEEL, edge_col=COLOR_PLASTIC_EDGE, bias=0.0):
@@ -271,25 +241,22 @@ class Mesh3D:
 
 
 # -----------------------------------------------------------------------------
-# 3D MODEL BUILDERS FOR THE 9 PANELS
+# 3D MODEL BUILDERS FOR THE 8 PANELS (7 STL PARTS + 1 ASSEMBLY)
 # -----------------------------------------------------------------------------
 def build_center_feed_hub() -> Mesh3D:
-    """1. Center Feed Hub: 40 × 24 × 70 mm, Balun cradle, 25 mm feed posts, M4 nut pockets."""
+    """1. Center Feed Hub: 40 × 24 × 110 mm, Balun cradle, 25 mm feed posts, M4 nut pockets."""
     m = Mesh3D()
-    m.add_box(-20, -12, -35, 40, 24, 70, COLOR_PLASTIC_BASE, COLOR_PLASTIC_EDGE)
-    m.add_box(-7, -5, 35, 14, 10, 10, COLOR_PLASTIC_ACCENT, (140, 210, 255))
-    m.add_cylinder_y(0, -5.5, -4.5, 40, 1.3, sides=8, base_col=COLOR_CAVITY_FILL, edge_col=COLOR_PLASTIC_EDGE)
+    m.add_box(-15, -10, -50, 30, 20, 100, COLOR_PLASTIC_BASE, COLOR_PLASTIC_EDGE)
+    m.add_box(-20, -12, -28, 40, 24, 56, COLOR_PLASTIC_BASE, COLOR_PLASTIC_EDGE)
+    m.add_box(-7, -5, 50, 14, 10, 10, COLOR_PLASTIC_ACCENT, (140, 210, 255))
+    m.add_cylinder_y(0, -5.5, -4.5, 55, 1.3, sides=8, base_col=COLOR_CAVITY_FILL, edge_col=COLOR_PLASTIC_EDGE)
     m.add_cavity(-13, -12.1, -18, 26, 8, 36, COLOR_CAVITY_FILL, (80, 150, 220))
     m.add_box(-11, -10.5, -15, 22, 7, 30, COLOR_BALUN_BODY, COLOR_BALUN_ACCENT, bias=-10.0)
     m.add_cylinder_z(0, -7, -26, -15, 4.5, sides=12, base_col=COLOR_STEEL, edge_col=(200, 215, 230), bias=-12.0)
-    m.add_box(-15, -12.1, 20, 5, 4, 11, COLOR_PLASTIC_ACCENT, (130, 200, 255), bias=-2.0)
-    m.add_box(10, -12.1, 20, 5, 4, 11, COLOR_PLASTIC_ACCENT, (130, 200, 255), bias=-2.0)
-    m.add_cylinder_y(-12.5, -13.5, -11.5, 25.5, 2.2, sides=10, base_col=COLOR_STEEL, edge_col=COLOR_TEXT_WHITE, bias=-12.0)
-    m.add_cylinder_y(12.5, -13.5, -11.5, 25.5, 2.2, sides=10, base_col=COLOR_STEEL, edge_col=COLOR_TEXT_WHITE, bias=-12.0)
-    m.add_box(-13.5, -12.8, 15, 2, 1, 10.5, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-13.0)
-    m.add_box(11.5, -12.8, 15, 2, 1, 10.5, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-13.0)
-    m.add_box(-14, -12.5, -35, 3, 1.2, 70, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-5.0)
-    m.add_box(11, -12.5, -35, 3, 1.2, 70, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-5.0)
+    m.add_cylinder_y(-12.5, -13.5, -11.5, 20.0, 2.2, sides=10, base_col=COLOR_STEEL, edge_col=COLOR_TEXT_WHITE, bias=-12.0)
+    m.add_cylinder_y(12.5, -13.5, -11.5, 20.0, 2.2, sides=10, base_col=COLOR_STEEL, edge_col=COLOR_TEXT_WHITE, bias=-12.0)
+    m.add_box(-14, -12.5, -50, 3, 1.2, 100, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-5.0)
+    m.add_box(11, -12.5, -50, 3, 1.2, 100, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-5.0)
     m.add_cavity(-8, -12.2, -26, 16, 2, 3, COLOR_CAVITY_FILL, (70, 120, 180), bias=-8.0)
     return m
 
@@ -315,18 +282,18 @@ def build_whisker_bay_bracket() -> Mesh3D:
 
 
 def build_spine_segment() -> Mesh3D:
-    """3. Spine Segment: 20 × 14 × 120 mm, I-beam cross section, 110 mm active length."""
+    """3. Spine Segment: 30 × 14 × 110 mm, I-beam cross section, 100 mm active length, 25 mm phase grooves."""
     m = Mesh3D()
-    m.add_box(-10, -7, -55, 20, 2.8, 110, COLOR_PLASTIC_BASE, COLOR_PLASTIC_EDGE)
-    m.add_box(-10, 4.2, -55, 20, 2.8, 110, (38, 85, 145), (100, 175, 240))
-    m.add_box(-3.5, -4.2, -55, 7, 8.4, 110, COLOR_PLASTIC_ACCENT, COLOR_PLASTIC_EDGE)
-    m.add_box(-7, -5, 55, 14, 10, 10, COLOR_PLASTIC_ACCENT, (140, 210, 255))
-    m.add_cylinder_y(0, -5.5, -4.5, 60, 1.3, sides=8, base_col=COLOR_CAVITY_FILL, edge_col=COLOR_PLASTIC_EDGE)
-    m.add_cylinder_y(0, -7.2, -6.5, -48, 1.3, sides=8, base_col=COLOR_CAVITY_FILL, edge_col=COLOR_PLASTIC_EDGE, bias=-6.0)
-    m.add_box(-8.5, -7.5, -55, 2.8, 1.2, 110, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-5.0)
-    m.add_box(5.7, -7.5, -55, 2.8, 1.2, 110, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-5.0)
-    for rz in [-30, 0, 30]:
-        m.add_box(-10, -4.2, rz - 2, 20, 8.4, 4, (44, 95, 160), COLOR_PLASTIC_EDGE, bias=-2.0)
+    m.add_box(-15, -7, -50, 30, 2.8, 100, COLOR_PLASTIC_BASE, COLOR_PLASTIC_EDGE)
+    m.add_box(-15, 4.2, -50, 30, 2.8, 100, (38, 85, 145), (100, 175, 240))
+    m.add_box(-3.5, -4.2, -50, 7, 8.4, 100, COLOR_PLASTIC_ACCENT, COLOR_PLASTIC_EDGE)
+    m.add_box(-7, -5, 50, 14, 10, 10, COLOR_PLASTIC_ACCENT, (140, 210, 255))
+    m.add_cylinder_y(0, -5.5, -4.5, 55, 1.3, sides=8, base_col=COLOR_CAVITY_FILL, edge_col=COLOR_PLASTIC_EDGE)
+    m.add_cylinder_y(0, -7.2, -6.5, -44, 1.3, sides=8, base_col=COLOR_CAVITY_FILL, edge_col=COLOR_PLASTIC_EDGE, bias=-6.0)
+    m.add_box(-13.9, -7.5, -50, 2.8, 1.2, 100, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-5.0)
+    m.add_box(11.1, -7.5, -50, 2.8, 1.2, 100, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-5.0)
+    for rz in [-25, 0, 25]:
+        m.add_box(-15, -4.2, rz - 2, 30, 8.4, 4, (44, 95, 160), COLOR_PLASTIC_EDGE, bias=-2.0)
     return m
 
 
@@ -336,11 +303,11 @@ def build_phase_crossover_spacer() -> Mesh3D:
     m.add_box(-17.5, -6, -15, 35, 8, 30, COLOR_PLASTIC_BASE, COLOR_PLASTIC_EDGE)
     m.add_box(-12, 2, -12, 24, 5, 24, COLOR_PLASTIC_ACCENT, (130, 200, 255))
     m.add_cavity(-8, 2.1, -12.1, 16, 5, 24.2, COLOR_CAVITY_FILL, COLOR_CAVITY_EDGE, bias=-8.0)
-    for i, t in enumerate([-12, -8, -4, 0, 4, 8, 12]):
+    for t in [-12, -8, -4, 0, 4, 8, 12]:
         wx = -12.5 + (25.0 * (t + 12) / 24.0)
         wz = 12.0 - (24.0 * (t + 12) / 24.0)
         m.add_box(wx - 2, -6.6, wz - 2.5, 4, 1.4, 5, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-10.0)
-    for i, t in enumerate([-12, -8, -4, 0, 4, 8, 12]):
+    for t in [-12, -8, -4, 0, 4, 8, 12]:
         wx = 12.5 - (25.0 * (t + 12) / 24.0)
         wz = 12.0 - (24.0 * (t + 12) / 24.0)
         m.add_box(wx - 2, -0.2, wz - 2.5, 4, 1.4, 5, (200, 110, 40), (220, 140, 70), bias=-3.0)
@@ -348,38 +315,22 @@ def build_phase_crossover_spacer() -> Mesh3D:
     return m
 
 
-def build_triangular_tine_spreader() -> Mesh3D:
-    """5. Triangular Tine Spreader: 72 × 12 × 8 mm, 66 mm C-to-C snap jaws, ribbed truss."""
-    m = Mesh3D()
-    m.add_box(-33, -3, -3, 66, 6, 6, COLOR_PLASTIC_BASE, COLOR_PLASTIC_EDGE)
-    m.add_box(-33, -1.5, 3, 66, 3, 1.5, COLOR_PLASTIC_ACCENT, (140, 210, 255))
-    m.add_box(-33, -1.5, -4.5, 66, 3, 1.5, (38, 85, 145), (100, 175, 240))
-    m.add_box(-36, -6, -4, 6, 12, 8, COLOR_PLASTIC_ACCENT, (140, 210, 255))
-    m.add_cavity(-35, -3, -4.1, 4, 6, 8.2, COLOR_CAVITY_FILL, COLOR_CAVITY_EDGE, bias=-6.0)
-    m.add_box(-34.5, -8, -1.5, 3, 16, 3, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-12.0)
-    m.add_box(30, -6, -4, 6, 12, 8, COLOR_PLASTIC_ACCENT, (140, 210, 255))
-    m.add_cavity(31, -3, -4.1, 4, 6, 8.2, COLOR_CAVITY_FILL, COLOR_CAVITY_EDGE, bias=-6.0)
-    m.add_box(31.5, -8, -1.5, 3, 16, 3, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-12.0)
-    for px in [-22, -11, 0, 11, 22]:
-        m.add_cavity(px - 3.5, -3.1, -1.8, 7, 2, 3.6, COLOR_CAVITY_FILL, COLOR_CAVITY_EDGE, bias=-4.0)
-    return m
-
-
 def build_bowtie_backing_mesh() -> Mesh3D:
-    """5. Full-Length Bowtie Backing Strut: 210 × 12 × 8 mm, continuous wire cradle, I-beam truss."""
+    """5. Full-Length Bowtie Backing Strut: 180 × 12 × 8 mm, C-clip snap wire cradle, interlocking ends."""
     m = Mesh3D()
-    m.add_box(-105, -6, 0, 210, 12, 8, COLOR_PLASTIC_BASE, COLOR_PLASTIC_EDGE)
-    m.add_cavity(-102, -1.6, 5.0, 204, 3.2, 3.1, COLOR_CAVITY_FILL, COLOR_CAVITY_EDGE, bias=-6.0)
-    m.add_box(-97, -8, 5.5, 194, 16, 2.6, (38, 85, 145), (100, 175, 240), bias=-2.0)
-    m.add_box(-97, -8, -1.0, 194, 16, 2.5, (38, 85, 145), (100, 175, 240), bias=-2.0)
-    win_centers = [-78.0, -54.0, -30.0, -6.0, 18.0, 42.0, 66.0, 86.0]
+    m.add_box(-86, -6, 0, 176, 12, 8, COLOR_PLASTIC_BASE, COLOR_PLASTIC_EDGE)
+    m.add_box(-90, -3, 2, 4, 6, 4, COLOR_PLASTIC_ACCENT, (140, 210, 255))
+    m.add_cavity(-86, -1.6, 5.0, 172, 3.2, 3.1, COLOR_CAVITY_FILL, COLOR_CAVITY_EDGE, bias=-6.0)
+    m.add_box(-80, -8, 5.5, 160, 16, 2.5, (38, 85, 145), (100, 175, 240), bias=-2.0)
+    m.add_box(-80, -8, -1.0, 160, 16, 2.4, (38, 85, 145), (100, 175, 240), bias=-2.0)
+    win_centers = [-68.0, -44.0, -20.0, 4.0, 28.0, 52.0, 72.0]
     for cx in win_centers:
-        m.add_cavity(cx - 6.0, -1.6, -1.0, 12.0, 3.2, 10.0, COLOR_CAVITY_FILL, COLOR_CAVITY_EDGE, bias=-4.0)
+        m.add_cavity(cx - 5.0, -1.6, -1.0, 10.0, 3.2, 10.0, COLOR_CAVITY_FILL, COLOR_CAVITY_EDGE, bias=-4.0)
     return m
 
 
 def build_top_hanging_cap() -> Mesh3D:
-    """7. Top Hanging Cap: 44 × 18 × 30 mm, dual Ø5 mm eyelets, female mortise."""
+    """6. Top Hanging Cap: 44 × 18 × 30 mm, dual Ø5 mm eyelets, female mortise."""
     m = Mesh3D()
     m.add_box(-22, -9, -15, 44, 18, 18, COLOR_PLASTIC_BASE, COLOR_PLASTIC_EDGE)
     m.add_cavity(-7, -5, -15.1, 14, 10, 10, COLOR_CAVITY_FILL, COLOR_CAVITY_EDGE, bias=-8.0)
@@ -393,10 +344,10 @@ def build_top_hanging_cap() -> Mesh3D:
 
 
 def build_fit_calibration_coupon() -> Mesh3D:
-    """8. Fit Calibration Coupon: 90 × 50 × 10 mm, friction slots, snap cavities, nut pocket, joints."""
+    """7. Fit Calibration Coupon: 90 × 50 × 10 mm, friction slots, snap cavities, nut pocket, joints."""
     m = Mesh3D()
     m.add_box(-45, -25, -5, 90, 50, 10, COLOR_PLASTIC_BASE, COLOR_PLASTIC_EDGE)
-    for idx, (sx, sw) in enumerate([(-36, 2.8), (-30, 3.0), (-24, 3.2), (-18, 3.4)]):
+    for sx, sw in [(-36, 2.8), (-30, 3.0), (-24, 3.2), (-18, 3.4)]:
         m.add_cavity(sx - sw / 2, -18, 2.0, sw, 36, 3.1, COLOR_CAVITY_FILL, COLOR_CAVITY_EDGE, bias=-6.0)
     m.add_box(-24 - 1.3, -20, 2.5, 2.6, 40, 2.6, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-10.0)
     m.add_cavity(-10 - 1.1, -16, 1.5, 2.2, 32, 3.6, COLOR_CAVITY_FILL, (80, 160, 230), bias=-6.0)
@@ -412,7 +363,7 @@ def build_fit_calibration_coupon() -> Mesh3D:
 
 
 def build_spine_assembly_stack() -> Mesh3D:
-    """9. Spine Assembly & System Stack: Full 560 mm vertical array with balun, crossovers, and bays."""
+    """8. Spine Assembly & System Stack: Full 560 mm vertical array with balun, crossovers, and bays."""
     m = Mesh3D()
     m.add_box(-8, -4, 62, 16, 8, 10, COLOR_PLASTIC_ACCENT, (140, 210, 255))
     m.add_box(-6, -2, 72, 3, 4, 5, COLOR_PLASTIC_ACCENT, COLOR_TEXT_WHITE)
@@ -429,11 +380,9 @@ def build_spine_assembly_stack() -> Mesh3D:
     m.add_box(-22, -4.5, 12, 10, 1, 2, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-5.0)
     m.add_box(12, -4.5, 20, 10, 1, 2, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-5.0)
     m.add_box(12, -4.5, 12, 10, 1, 2, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-5.0)
-    m.add_box(-5, -3, 2, 10, 6, 12, (40, 90, 150), COLOR_PLASTIC_EDGE)
-    m.add_box(-10, -5, -14, 20, 10, 16, (52, 115, 185), (140, 210, 255), bias=-2.0)
-    m.add_box(-6, -5.5, -11, 12, 4, 10, COLOR_BALUN_BODY, COLOR_BALUN_ACCENT, bias=-6.0)
-    m.add_cylinder_z(0, -3.5, -18, -14, 2.5, sides=8, base_col=COLOR_STEEL, edge_col=COLOR_TEXT_WHITE, bias=-8.0)
-    m.add_box(-5, -3, -26, 10, 6, 12, (40, 90, 150), COLOR_PLASTIC_EDGE)
+    m.add_box(-10, -5, -26, 20, 10, 40, (52, 115, 185), (140, 210, 255), bias=-2.0)
+    m.add_box(-6, -5.5, -14, 12, 4, 12, COLOR_BALUN_BODY, COLOR_BALUN_ACCENT, bias=-6.0)
+    m.add_cylinder_z(0, -3.5, -20, -14, 2.5, sides=8, base_col=COLOR_STEEL, edge_col=COLOR_TEXT_WHITE, bias=-8.0)
     m.add_box(-12, -4, -42, 24, 8, 16, COLOR_PLASTIC_BASE, COLOR_PLASTIC_EDGE)
     m.add_box(-22, -4.5, -36, 10, 1, 2, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-5.0)
     m.add_box(-22, -4.5, -44, 10, 1, 2, COLOR_COPPER, COLOR_COPPER_EDGE, bias=-5.0)
@@ -490,7 +439,7 @@ def draw_card(draw: ImageDraw.ImageDraw, x0: int, y0: int, width: int, height: i
     # 1. Main Container
     draw.rounded_rectangle([(x0, y0), (x1, y1)], radius=5, fill=COLOR_CARD_BG, outline=COLOR_CARD_BORDER, width=1)
 
-    # 2. Card Header
+    # 2. Card Header (height 28 px: y0 to y0 + 28)
     hdr_h = 28
     draw.rounded_rectangle([(x0, y0), (x1, y0 + hdr_h)], radius=5, fill=COLOR_CARD_HDR)
     draw.rectangle([(x0, y0 + hdr_h - 4), (x1, y0 + hdr_h)], fill=COLOR_CARD_HDR)
@@ -508,7 +457,7 @@ def draw_card(draw: ImageDraw.ImageDraw, x0: int, y0: int, width: int, height: i
     draw.rounded_rectangle([(qx, qy), (qx + qw, qy + qh)], radius=3, fill=(18, 25, 33), outline=qty_color, width=1)
     draw.text((qx + 4, qy + 1), qty_text, fill=qty_color, font=FONT_BADGE)
 
-    # 3. Location Strip
+    # 3. Location Strip (height 18 px: y0 + 28 to y0 + 46)
     loc_h = 18
     loc_y = y0 + hdr_h
     draw.rectangle([(x0, loc_y), (x1, loc_y + loc_h)], fill=COLOR_CARD_STRIP)
@@ -520,17 +469,17 @@ def draw_card(draw: ImageDraw.ImageDraw, x0: int, y0: int, width: int, height: i
     draw.text((x0 + 8, loc_y + 3), loc_lbl, fill=COLOR_TEXT_GOLD, font=FONT_LOC_LABEL)
     draw.text((x0 + 12 + lbl_w, loc_y + 3), location_str, fill=COLOR_TEXT_WHITE, font=FONT_LOC_VALUE)
 
-    # 4. 3D Mesh Viewport (Card height 220: header 28 + loc 18 = 46. Footer ~42. Remaining = 132 px)
-    view_cy = y0 + hdr_h + loc_h + 66
+    # 4. 3D Mesh Viewport (Card height 220: header 28 + loc 18 = 46. Footer 42. Viewport = 132 px)
+    view_cy = y0 + hdr_h + loc_h + 68
     view_cx = x0 + width / 2
     mesh.render(draw, camera, view_cx, view_cy, mesh_scale)
 
-    # 5. Callouts
+    # 5. Callouts (All callouts positioned strictly inside viewport y >= 50, below LOCATION strip)
     for callout in callouts:
         t3d, (rbx, rby), c_title, c_sub, c_col = callout
         tu, tv, _ = camera.project(t3d[0], t3d[1], t3d[2], view_cx, view_cy, mesh_scale)
         bx = x0 + rbx
-        by = y0 + rby
+        by = y0 + max(50, rby)
         draw_callout_pill(draw, tu, tv, bx, by, c_title, c_sub, color=c_col)
 
     # 6. Technical Specifications Footer (2 bullet lines)
@@ -550,11 +499,11 @@ def draw_card(draw: ImageDraw.ImageDraw, x0: int, y0: int, width: int, height: i
 # -----------------------------------------------------------------------------
 # MASTER PREVIEW GENERATOR ROUTINE
 # -----------------------------------------------------------------------------
-def generate_preview():
+def generate_preview(output_path: str = OUTPUT_PATH) -> bool:
     """Generates the master 1800 x 800 pixel BT4-V parts preview PNG image."""
     print("=" * 78)
     print("BT4-V 3D PRINTED ANTENNA — 3D PRINTABLE PARTS PREVIEW GENERATOR (v0.3.0)")
-    print(f"Canvas: {CANVAS_WIDTH} × {CANVAS_HEIGHT} px  |  Target Output: {OUTPUT_PATH}")
+    print(f"Canvas: {CANVAS_WIDTH} × {CANVAS_HEIGHT} px  |  Target Output: {output_path}")
     print("=" * 78)
 
     img = Image.new("RGB", (CANVAS_WIDTH, CANVAS_HEIGHT), COLOR_CANVAS_BG)
@@ -563,13 +512,13 @@ def generate_preview():
     # 1. Top Header Banner
     draw.rectangle([(12, 6), (CANVAS_WIDTH - 12, 50)], fill=COLOR_BANNER_BG, outline=COLOR_CARD_BORDER, width=1)
     draw.text((22, 11), "BT4-V 3D PRINTED ANTENNA — 3D PRINTABLE PARTS PREVIEW", fill=COLOR_TEXT_WHITE, font=FONT_TITLE)
-    draw.text((22, 32), "Revision v0.3.0  |  Total Print Mass ~200 g (PETG/PLA)  |  8 Modular Components + Assembly  |  100% FreeCAD CSG",
+    draw.text((22, 32), "Revision v0.3.0  |  Total Print Mass ~235 g (PETG/PLA)  |  7 Printable STL Models + Assembly  |  100% FreeCAD CSG",
               fill=COLOR_TEXT_CYAN, font=FONT_SUBTITLE)
 
     # Top Right Badges
     badges = [
         ("REVISION v0.3.0", COLOR_TEXT_GOLD),
-        ("8 PARTS + ASSEMBLY", COLOR_TEXT_GREEN),
+        ("7 STL MODELS + ASSEMBLY", COLOR_TEXT_GREEN),
         ("ASME Y14.5M CAD", COLOR_TEXT_BLUE)
     ]
     bx = CANVAS_WIDTH - 22
@@ -579,7 +528,7 @@ def generate_preview():
         bh = bb[3] - bb[1] + 6
         bx -= bw
         draw.rounded_rectangle([(bx, 14), (bx + bw, 14 + bh)], radius=3, fill=(18, 25, 33), outline=b_col, width=1)
-        draw.text((bx + 6, b_text and 17 or 17), b_text, fill=b_col, font=FONT_BADGE)
+        draw.text((bx + 6, 17), b_text, fill=b_col, font=FONT_BADGE)
         bx -= 8
 
     # 2. Bottom Print Settings Summary Banner
@@ -587,10 +536,10 @@ def generate_preview():
     draw.rectangle([(12, b_top), (CANVAS_WIDTH - 12, 794)], fill=COLOR_BANNER_BG, outline=COLOR_CARD_BORDER, width=1)
     draw.text((22, b_top + 4), "RECOMMENDED 3D PRINT SPECIFICATIONS & FABRICATION GUIDELINES:", fill=COLOR_TEXT_GOLD, font=FONT_BANNER_HDR)
     draw.text((22, b_top + 17),
-              "• Material: PETG (recommended for UV/outdoor durability) or UV-stable PLA   • Layer Height: 0.20 mm   • Perimeters: 3–4 Walls (≥1.2 mm shell)   • Infill: 25–30% Gyroid or Grid   • Solid Layers: 4 Top / 4 Bottom",
+              "• Material: PETG (recommended for UV/window durability) or PLA   • Layer Height: 0.20 mm   • Perimeters: 3 Walls (≥1.2 mm shell)   • Infill: 30% Gyroid or Grid   • Solid Layers: 4 Top / 4 Bottom",
               fill=COLOR_TEXT_MUTED, font=FONT_BANNER_TXT)
     draw.text((22, b_top + 29),
-              "• Print Orientation: Flat on bed (0 supports required across all parts)   • Nozzle: 0.40 mm   • Bed Compatibility: Fits standard 220×220 or 235×235 mm build plates   • Total Antenna BOM: 17 pieces (~200 g)",
+              "• Print Orientation: Flat on bed (0 supports required across all parts)   • Nozzle: 0.40 mm   • Bed Compatibility: Fits standard 220×220 or 235×235 mm build plates   • Total Production Set: 34 pieces (~235 g)",
               fill=COLOR_TEXT_CYAN, font=FONT_BANNER_TXT)
 
     # Camera Instances
@@ -598,7 +547,7 @@ def generate_preview():
     cam_flat = Camera(eye=(70.0, -90.0, 110.0), target=(0.0, 0.0, 0.0))
     cam_tall = Camera(eye=(100.0, -120.0, 50.0), target=(0.0, 0.0, 0.0))
 
-    # Cards Geometry Setup (3 Columns × 3 Rows = 9 Cards)
+    # Cards Geometry Setup (3 Columns × 3 Rows = 8 Cards)
     card_w = 580
     card_h = 220
     col_x = [15, 610, 1205]
@@ -606,90 +555,90 @@ def generate_preview():
 
     # --- CARD 1: CENTER FEED HUB ---
     c1_callouts = [
-        ((0, -12, 0), (10, 38), "RCA VH101R Cradle", "Contoured Balun Cavity", COLOR_TEXT_BLUE),
-        ((-12.5, -12, 24), (320, 38), "25 mm Feed Posts", "M4 Studs & Terminals", COLOR_TEXT_GOLD),
-        ((0, 0, 40), (10, 145), "Spine Joint", "+Z Tenon & -Z Mortise", COLOR_TEXT_CYAN),
-        ((0, -12, -26), (320, 145), "Strain Relief", "Zip-Tie Loop Slot", COLOR_TEXT_PURPLE)
+        ((0, -12, 0), (10, 52), "RCA VH101R Cradle", "Contoured Balun Cavity", COLOR_TEXT_BLUE),
+        ((-12.5, -12, 20), (350, 52), "25 mm Feed Posts", "M4 Studs & Terminals", COLOR_TEXT_GOLD),
+        ((0, 0, 55), (10, 148), "Spine Joint", "+Z Tenon & -Z Mortise", COLOR_TEXT_CYAN),
+        ((0, -12, -26), (350, 148), "Strain Relief", "Zip-Tie Loop Slot", COLOR_TEXT_PURPLE)
     ]
     c1_bullets = [
-        "Houses commercial RCA VH101R balun directly between Bay 2 and Bay 3.",
-        "25 mm feed terminals mate with 12 AWG copper phase lines and balun spade lugs."
+        "Spans 100 mm active height between Bay 2 and Bay 3 for exact 130 mm bay pitch.",
+        "25 mm feed terminals mate with 12 AWG copper phase lines and RCA VH101R spade lugs."
     ]
     draw_card(draw, col_x[0], row_y[0], card_w, card_h,
-              "01", "CENTER FEED HUB", "stl/BT4V_Center_Feed.stl  •  40 × 24 × 70 mm  •  28,500 mm³",
-              "1 REQUIRED", COLOR_TEXT_GREEN, "Spine Center — Between Bay 2 & Bay 3 (Z = 0 mm)",
-              build_center_feed_hub(), cam_standard, 1.45, c1_callouts, c1_bullets)
+              "01", "CENTER FEED HUB", "stl/BT4V_Center_Feed.stl  •  40 × 24 × 110 mm  •  42,000 mm³",
+              "1 REQUIRED", COLOR_TEXT_GREEN, "Spine Center — Directly Between Bay 2 & Bay 3 (Z = 0 mm)",
+              build_center_feed_hub(), cam_tall, 1.05, c1_callouts, c1_bullets)
 
     # --- CARD 2: WHISKER BAY BRACKET ---
     c2_callouts = [
-        ((-20, -9, 8), (10, 38), "Dual Flare Guides", "25.5° VHF & 32.5° UHF V-Slots", COLOR_TEXT_BLUE),
-        ((-12.5, -10, 0), (320, 38), "Apex Clamping", "2 × M4 Bolt Holes & Nuts", COLOR_TEXT_GOLD),
-        ((0, 0, 25), (10, 145), "Spine Tenon", "Symmetrical Interlock", COLOR_TEXT_CYAN),
-        ((11, -9, -10), (320, 145), "Phase Channels", "3.2 × 3.0 mm Wire Grooves", COLOR_TEXT_PURPLE)
+        ((-20, -9, 8), (10, 52), "Dual Flare Guides", "25.5° VHF & 32.5° UHF V-Slots", COLOR_TEXT_BLUE),
+        ((-12.5, -10, 0), (350, 52), "Apex Clamping", "2 × M4 Bolt Holes & Nuts", COLOR_TEXT_GOLD),
+        ((0, 0, 25), (10, 148), "Spine Tenon", "Symmetrical Interlock", COLOR_TEXT_CYAN),
+        ((11, -9, -10), (350, 148), "Phase Channels", "3.2 × 3.0 mm Wire Grooves", COLOR_TEXT_PURPLE)
     ]
     c2_bullets = [
         "Universal whisker mount supporting VHF (25.5°) and UHF (32.5°) flare angles.",
-        "Clamps whisker apex and phase line together via M4 bolts and captive nuts."
+        "Includes 4 lateral root sockets locking the full-length bowtie backing struts."
     ]
     draw_card(draw, col_x[1], row_y[0], card_w, card_h,
               "02", "WHISKER BAY BRACKET", "stl/BT4V_Bay_Bracket.stl  •  50 × 18 × 40 mm  •  19,200 mm³",
-              "4 REQUIRED", COLOR_TEXT_GREEN, "Bays 1, 2, 3, & 4 (130 mm Array Pitch)",
-              build_whisker_bay_bracket(), cam_standard, 1.80, c2_callouts, c2_bullets)
+              "4 REQUIRED", COLOR_TEXT_GREEN, "Bays 1, 2, 3, & 4 (130 mm Center-to-Center Array Pitch)",
+              build_whisker_bay_bracket(), cam_standard, 1.75, c2_callouts, c2_bullets)
 
     # --- CARD 3: SPINE SEGMENT ---
     c3_callouts = [
-        ((-10, 0, 15), (10, 38), "I-Beam Profile", "Flanges Maximize Stiffness", COLOR_TEXT_BLUE),
-        ((0, 0, 0), (320, 38), "110 mm Active Length", "Exact 130 mm Bay Pitch", COLOR_TEXT_GOLD),
-        ((0, 0, 60), (10, 145), "Tenon/Mortise", "2.6 mm Cross-Pin Holes", COLOR_TEXT_CYAN),
-        ((5.7, -7, -20), (320, 145), "Wire Grooves", "25 mm Pitch Phase Lines", COLOR_TEXT_PURPLE)
+        ((-12, 0, 15), (10, 52), "I-Beam Profile", "30 mm Width & Stiffening Ribs", COLOR_TEXT_BLUE),
+        ((0, 0, 0), (350, 52), "100 mm Active Span", "Exact 130 mm Bay Pitch", COLOR_TEXT_GOLD),
+        ((0, 0, 55), (10, 148), "Tenon/Mortise", "2.6 mm Cross-Pin Holes", COLOR_TEXT_CYAN),
+        ((11.1, -7, -20), (350, 148), "25 mm Phase Grooves", "Straight-Through Wire Bus", COLOR_TEXT_PURPLE)
     ]
     c3_bullets = [
-        "Connects modular bay brackets into an ultra-rigid 560 mm vertical array spine.",
-        "I-beam web reduces print weight while resisting gravitational sag."
+        "Spaces outer bays (Bay 1–2 and Bay 3–4) at the exact 130.0 mm array pitch.",
+        "25.0 mm front groove spacing routes 12 AWG phase lines straight without bends."
     ]
     draw_card(draw, col_x[2], row_y[0], card_w, card_h,
-              "03", "SPINE SEGMENT", "stl/BT4V_Spine_Segment.stl  •  20 × 14 × 120 mm  •  16,800 mm³",
-              "4 REQUIRED", COLOR_TEXT_GREEN, "Inter-Bay Struts (Bays 1–2, 2–Feed, Feed–3, 3–4)",
+              "03", "SPINE SEGMENT", "stl/BT4V_Spine_Segment.stl  •  30 × 14 × 110 mm  •  21,000 mm³",
+              "2 REQUIRED", COLOR_TEXT_GREEN, "Outer Inter-Bay Struts (Between Bay 1–2 & Bay 3–4)",
               build_spine_segment(), cam_tall, 1.15, c3_callouts, c3_bullets)
 
     # --- CARD 4: PHASE CROSSOVER SPACER ---
     c4_callouts = [
-        ((-8, -6, 8), (10, 38), "180° Transposition", "Dual Diagonal Wire Channels", COLOR_TEXT_BLUE),
-        ((0, -2, 0), (320, 38), "Dielectric Gap", "≥5.0 mm Plastic Barrier", COLOR_TEXT_GOLD),
-        ((0, 5, 0), (10, 145), "Snap Clip", "Grips Spine Strut", COLOR_TEXT_CYAN),
-        ((8, 0, 8), (320, 145), "Dual-Plane Routing", "Isolated Conductor Cavities", COLOR_TEXT_PURPLE)
+        ((-8, -6, 8), (10, 52), "180° Transposition", "Dual Diagonal Wire Channels", COLOR_TEXT_BLUE),
+        ((0, -2, 0), (350, 52), "Dielectric Gap", "≥5.0 mm Plastic Barrier", COLOR_TEXT_GOLD),
+        ((0, 5, 0), (10, 148), "Snap Clip", "Grips Spine Strut Waist", COLOR_TEXT_CYAN),
+        ((8, 0, 8), (350, 148), "Dual-Plane Routing", "Isolated Conductor Cavities", COLOR_TEXT_PURPLE)
     ]
     c4_bullets = [
-        "Inverts RF phase 180° between bay pairs for in-phase array combination.",
-        "Integrated snap clip mounts securely over spine strut without screws."
+        "Inverts RF phase 180° between outer VHF and inner UHF bays for in-phase gain.",
+        "Integrated snap clip mounts securely over spine strut waist without screws."
     ]
     draw_card(draw, col_x[0], row_y[1], card_w, card_h,
               "04", "PHASE CROSSOVER SPACER", "stl/BT4V_Phase_Crossover.stl  •  35 × 12 × 30 mm  •  6,100 mm³",
-              "2 REQUIRED", COLOR_TEXT_GREEN, "Between Bays 1–2 & Bays 3–4 (Spine Clip-On)",
-              build_phase_crossover_spacer(), cam_standard, 2.15, c4_callouts, c4_bullets)
+              "2 REQUIRED", COLOR_TEXT_GREEN, "Mid-Span on Spine Segments 1 & 2 (Bays 1–2 & Bays 3–4)",
+              build_phase_crossover_spacer(), cam_standard, 2.05, c4_callouts, c4_bullets)
 
     # --- CARD 5: FULL-LENGTH BACKING STRUT ---
     c5_callouts = [
-        ((-100, 0, 4), (10, 38), "Continuous Cradle", "3.2 × 3.0 mm Wire Groove", COLOR_TEXT_BLUE),
-        ((0, 0, 4), (320, 38), "I-Beam Truss Web", "Lightening Windows & Rigid Flanges", COLOR_TEXT_GOLD),
-        ((95, 0, 4), (10, 145), "Tip Terminal Cap", "Seals Outer Wire Tip", COLOR_TEXT_CYAN),
-        ((-95, 0, 4), (320, 145), "Root Interlock", "Locks into Bay Bracket Slot", COLOR_TEXT_PURPLE)
+        ((-60, 0, 6), (10, 52), "C-Clip Snap Channel", "2.4 mm Throat / 3.2 mm Cavity", COLOR_TEXT_BLUE),
+        ((0, 0, 4), (350, 52), "I-Beam Truss Web", "Lightening Windows & Flanges", COLOR_TEXT_GOLD),
+        ((86, 0, 4), (10, 148), "Tip Mortise Socket", "Daisy-Chains for 340 mm VHF", COLOR_TEXT_CYAN),
+        ((-88, 0, 4), (350, 148), "Root Tenon", "Locks into Bay Bracket Socket", COLOR_TEXT_PURPLE)
     ]
     c5_bullets = [
-        "Runs continuously behind every V-whisker arm from bracket out to tip (210 mm span).",
+        "Supports 100% of every whisker arm: 1 per 200 mm UHF arm (8), 2 per 340 mm VHF arm (16).",
         "Permanently locks exact flare angles (32.5° UHF, 25.5° VHF) and eliminates gravity sag."
     ]
     draw_card(draw, col_x[1], row_y[1], card_w, card_h,
-              "05", "FULL-LENGTH BACKING STRUT", "stl/BT4V_Bowtie_Backing.stl  •  210 × 12 × 8 mm  •  2,400 mm³",
-              "8 REQUIRED", COLOR_TEXT_GREEN, "Behind Every V-Whisker Arm (2 per bay across Bays 1–4)",
-              build_bowtie_backing_mesh(), cam_flat, 1.35, c5_callouts, c5_bullets)
+              "05", "FULL-LENGTH BACKING STRUT", "stl/BT4V_Bowtie_Backing.stl  •  180 × 12 × 8 mm  •  2,200 mm³",
+              "24 REQUIRED", COLOR_TEXT_GREEN, "All 16 V-Whisker Arms (1/arm UHF [8], 2/arm VHF [16])",
+              build_bowtie_backing_mesh(), cam_flat, 0.92, c5_callouts, c5_bullets)
 
     # --- CARD 6: TOP HANGING CAP ---
     c6_callouts = [
-        ((-15, 0, 9), (10, 38), "Dual Ø5.0 mm Eyelets", "30.0 mm C-to-C Spacing", COLOR_TEXT_BLUE),
-        ((0, 0, 8), (320, 38), "Anti-Rotation Yoke", "Prevents Twisting on Window", COLOR_TEXT_GOLD),
-        ((0, 0, -10), (10, 145), "Female Mortise", "Mates to Bay 1 Tenon", COLOR_TEXT_CYAN),
-        ((0, -9, -10), (320, 145), "Cross-Pin Hole", "Ø2.6 mm Retention Pin", COLOR_TEXT_PURPLE)
+        ((-15, 0, 9), (10, 52), "Dual Ø5.0 mm Eyelets", "30.0 mm C-to-C Spacing", COLOR_TEXT_BLUE),
+        ((0, 0, 8), (350, 52), "Anti-Rotation Yoke", "Prevents Twisting on Window", COLOR_TEXT_GOLD),
+        ((0, 0, -10), (10, 148), "Female Mortise", "Mates to Bay 1 Tenon", COLOR_TEXT_CYAN),
+        ((0, -9, -10), (350, 148), "Cross-Pin Hole", "Ø2.6 mm Retention Pin", COLOR_TEXT_PURPLE)
     ]
     c6_bullets = [
         "Terminates top of antenna spine and provides dual suspension anchor points.",
@@ -697,66 +646,114 @@ def generate_preview():
     ]
     draw_card(draw, col_x[2], row_y[1], card_w, card_h,
               "06", "TOP HANGING CAP", "stl/BT4V_Hanging_Cap.stl  •  44 × 18 × 30 mm  •  7,400 mm³",
-              "1 REQUIRED", COLOR_TEXT_GREEN, "Top Spine Termination (Mates to Bay 1 Tenon)",
-              build_top_hanging_cap(), cam_standard, 2.15, c6_callouts, c6_bullets)
+              "1 REQUIRED", COLOR_TEXT_GREEN, "Top Spine Termination (Mates to Bay 1 Top Tenon)",
+              build_top_hanging_cap(), cam_standard, 2.05, c6_callouts, c6_bullets)
 
     # --- CARD 7: FIT CALIBRATION COUPON ---
     c7_callouts = [
-        ((-24, 0, 2), (10, 38), "12 AWG Friction Slots", "2.8 to 3.4 mm Test Widths", COLOR_TEXT_BLUE),
-        ((-7, 0, 2), (320, 38), "Snap Cavities", "2.2 & 2.4 mm Throats", COLOR_TEXT_GOLD),
-        ((9, 0, 3), (10, 155), "M4 Pocket Stack", "4.3 mm Hole & 7.2 mm Nut Hex", COLOR_TEXT_CYAN),
-        ((31, -14, 5), (320, 155), "Joint & Balun Studs", "Sample Tenon & 25 mm Pitch", COLOR_TEXT_PURPLE)
+        ((-24, 0, 2), (10, 52), "12 AWG Friction Slots", "2.8 to 3.4 mm Test Widths", COLOR_TEXT_BLUE),
+        ((-7, 0, 2), (350, 52), "Snap Cavities", "2.2 & 2.4 mm C-Clip Throats", COLOR_TEXT_GOLD),
+        ((9, 0, 3), (10, 148), "M4 Pocket Stack", "4.3 mm Hole & 7.2 mm Nut Hex", COLOR_TEXT_CYAN),
+        ((31, -14, 5), (350, 148), "Joint & Balun Studs", "Sample Tenon & 25 mm Pitch", COLOR_TEXT_PURPLE)
     ]
     c7_bullets = [
         "CRITICAL: Print first to verify slicer extrusion tolerances before production parts.",
-        "Tests wire snap retention, M4 captured hex nuts, and tenon/mortise fit."
+        "Tests wire snap retention, M4 captured hex nuts, backing socket, and spine joint fit."
     ]
     draw_card(draw, col_x[0], row_y[2], card_w, card_h,
               "07", "FIT CALIBRATION COUPON", "stl/BT4V_Fit_Coupon.stl  •  90 × 50 × 10 mm  •  26,500 mm³",
               "PRINT FIRST", COLOR_TEXT_GOLD, "Pre-Print Calibration & Tolerance Bench Test",
-              build_fit_calibration_coupon(), cam_flat, 1.60, c7_callouts, c7_bullets)
+              build_fit_calibration_coupon(), cam_flat, 1.50, c7_callouts, c7_bullets)
 
     # --- CARD 8: MODULAR SPINE ASSEMBLY ---
     c8_callouts = [
-        ((0, 0, 65), (10, 38), "Top Suspension Cap", "Hangs via Dual Ø5 mm Eyelets", COLOR_TEXT_BLUE),
-        ((0, 0, 46), (320, 38), "4-Bay Bowtie Array", "VHF (1 & 4) & UHF (2 & 3)", COLOR_TEXT_GOLD),
-        ((0, -5, -8), (10, 145), "Center Feed Hub", "RCA VH101R Balun at Z = 0 mm", COLOR_TEXT_CYAN),
-        ((0, -4, 34), (320, 145), "Transposition Spacers", "2 × 180° Crossovers on Phase Bus", COLOR_TEXT_PURPLE)
+        ((0, 0, 65), (15, 52), "Top Suspension Cap", "Hangs via Dual Ø5 mm Eyelets", COLOR_TEXT_BLUE),
+        ((0, 0, 46), (820, 52), "4-Bay Bowtie Array", "VHF (1 & 4) & UHF (2 & 3)", COLOR_TEXT_GOLD),
+        ((0, -5, -8), (15, 148), "Center Feed Hub", "RCA VH101R Balun at Midpoint", COLOR_TEXT_CYAN),
+        ((0, -4, 34), (820, 148), "Transposition Spacers", "2 × 180° Crossovers on Phase Bus", COLOR_TEXT_PURPLE)
     ]
     c8_bullets = [
-        "10 modular joints locked with 2.5 mm cross-pins into a 560 mm rigid spine.",
-        "Exact 130 mm bay pitch maintains optimum VHF-Hi & UHF collinear array gain."
+        "7 modular spine joints locked with 2.5 mm cross-pins into a rigid 560 mm backbone.",
+        "Exact 130.0 mm bay pitch across all 4 bays with 24 full-length arm backing struts."
     ]
-    # Spanning across columns 1 and 2 (width = 1175 px)
     assembly_w = 1175
     draw_card(draw, col_x[1], row_y[2], assembly_w, card_h,
-              "08", "MODULAR SPINE ASSEMBLY", "Complete Antenna Backbone  •  560 mm Height  •  ~200 g Set",
-              "17 PIECES TOTAL", COLOR_TEXT_PURPLE, "Full Modular Backbone & Array Architecture",
-              build_spine_assembly_stack(), cam_standard, 1.15, c8_callouts, c8_bullets)
+              "08", "MODULAR SPINE ASSEMBLY", "Complete Antenna Architecture  •  560 mm Height  •  ~235 g Set",
+              "34 PIECES TOTAL", COLOR_TEXT_PURPLE, "Full Modular Backbone & Full-Span Backed Array Architecture",
+              build_spine_assembly_stack(), cam_standard, 1.10, c8_callouts, c8_bullets)
 
     # Save deliverable PNG
-    img.save(OUTPUT_PATH, format="PNG", optimize=True)
-    file_size = os.path.getsize(OUTPUT_PATH)
-    print(f"Generated deliverable: {OUTPUT_PATH}")
-    print(f"Image Resolution: {img.size[0]} × {img.size[1]} px")
+    out_dir = os.path.dirname(output_path)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+    img.save(output_path, format="PNG", optimize=True)
+
+    if not os.path.exists(output_path):
+        raise FileNotFoundError(f"Export failed: {output_path} does not exist.")
+
+    file_size = os.path.getsize(output_path)
+    with Image.open(output_path) as chk_img:
+        dims = chk_img.size
+
+    print(f"Generated deliverable: {output_path}")
+    print(f"Image Resolution: {dims[0]} × {dims[1]} px")
     print(f"File Size: {file_size:,} bytes ({file_size / 1024:.1f} kB)")
 
-    # Verification checks
-    if img.size != (CANVAS_WIDTH, CANVAS_HEIGHT):
-        raise ValueError(f"Canvas size mismatch: got {img.size}, expected ({CANVAS_WIDTH}, {CANVAS_HEIGHT})")
-    if file_size < MIN_FILE_SIZE_BYTES:
-        raise ValueError(f"File size too small: {file_size} bytes < {MIN_FILE_SIZE_BYTES} bytes")
+    if dims != (CANVAS_WIDTH, CANVAS_HEIGHT):
+        raise ValueError(f"Canvas size mismatch: got {dims}, expected ({CANVAS_WIDTH}, {CANVAS_HEIGHT})")
+    if file_size <= MIN_FILE_SIZE_BYTES:
+        raise ValueError(f"File size too small: {file_size} bytes (must exceed {MIN_FILE_SIZE_BYTES} bytes)")
 
-    print("[PASS] Verification successful: 1800x800 px, >10 kB, all 8 parts + assembly rendered.")
+    print("[PASS] Verification successful: 1800x800 px, >10 kB, all 7 STL parts + assembly rendered.")
     return True
 
 
+# -----------------------------------------------------------------------------
+# CLI ARGUMENT PARSER (Plan.md §4 Exit Code Contract)
+# -----------------------------------------------------------------------------
+def parse_args(argv=None) -> str:
+    """Parse CLI arguments; return output PNG path or exit 0 (--help) / 2 (invalid CLI args)."""
+    if argv is None:
+        argv = sys.argv[1:]
+
+    positional = []
+    for arg in argv:
+        if arg in ("-h", "--help"):
+            print((__doc__ or "").strip(), flush=True)
+            sys.exit(0)
+        if arg.startswith("-"):
+            print(f"[bt4v_preview] ERROR: Unrecognized CLI flag: {arg}", file=sys.stderr, flush=True)
+            sys.exit(2)
+        positional.append(arg)
+
+    if len(positional) > 1:
+        print(
+            f"[bt4v_preview] ERROR: Expected at most 1 positional output_path argument, got {len(positional)}: {positional}",
+            file=sys.stderr,
+            flush=True,
+        )
+        sys.exit(2)
+
+    if len(positional) == 1:
+        if not positional[0].strip():
+            print("[bt4v_preview] ERROR: Output path argument must not be empty.", file=sys.stderr, flush=True)
+            sys.exit(2)
+        return positional[0]
+
+    default_out = os.environ.get("OUT_PATH", OUTPUT_PATH)
+    if not default_out.strip():
+        print("[bt4v_preview] ERROR: Output path must not be empty.", file=sys.stderr, flush=True)
+        sys.exit(2)
+    return default_out
+
+
 if __name__ == "__main__":
+    out_target = parse_args(sys.argv[1:])
     try:
-        generate_preview()
-        sys.exit(0)
+        success = generate_preview(out_target)
+        sys.exit(0 if success else 1)
     except Exception as e:
-        print(f"[FAIL] Error generating preview: {e}", file=sys.stderr)
+        print(f"[bt4v_preview] ERROR: {e}", file=sys.stderr, flush=True)
         import traceback
         traceback.print_exc()
         sys.exit(1)

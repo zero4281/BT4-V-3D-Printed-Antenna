@@ -1,32 +1,34 @@
 """
 BT4-V 3D Printed Antenna — Center Feed Hub Generator (v0.3.0)
 
-Generates the central structural and electrical hub located between Bay 2 and
-Bay 3 of the modular vertical spine, exported as 'stl/BT4V_Center_Feed.stl'.
+Generates the central structural and electrical hub located directly between
+Bay 2 and Bay 3 of the modular vertical spine, exported as 'stl/BT4V_Center_Feed.stl'.
 
 Technical Specifications:
 - Requirements Baseline: Requirements.md §5, §16.3
-- Plan Baseline: Plan.md §2.1, §2.2, §3.1 (T1.1, T1.2)
-- Body Dimensions / Extents: 40.0 mm (X) x 24.0 mm (Y) x 70.0 mm (Z) (tol +/-0.1 mm)
-- Target Volume: 28,500 mm^3 (+/-2% -> acceptable range: 27,930 – 29,070 mm^3)
+- Body Dimensions / Extents: 40.0 mm (X) x 24.0 mm (Y) x 110.0 mm (Z) (tol +/-0.1 mm)
+  * Active length: 100.0 mm between shoulder stops (+ 10.0 mm tenon = 110.0 mm total Z),
+    yielding an exact 130.0 mm center-to-center bay pitch between Bay 2 and Bay 3.
+- Target Volume: 42,000 mm^3 (+/-2% -> acceptable range: 41,160 – 42,840 mm^3)
 - Solid Count: Exactly 1 valid solid (len(shape.Solids) == 1, shape.isValid() == True)
 
 Mechanical & RF Features:
 - Balun Cradle: Custom cavity contour cradling commercial RCA VH101R 4:1 matching
   transformer body with downward-facing F-connector coax exit.
 - Coaxial Strain Relief: Integrated 4.0 x 2.0 mm zip-tie loop slot below balun cradle.
-- Terminal Posts: 25.0 mm center-to-center terminal posts for phase-line feed connections.
+- Terminal Posts: 25.0 mm center-to-center terminal posts at Z = 50.0 mm (exact midpoint
+  between Bay 2 and Bay 3) for balanced phase-line feed connections.
 - Hardware Ports: 2 x M4 bolt clearance holes (4.3 mm) with rear captured hex nut pockets
   (7.2 mm across flats x 3.5 mm deep).
-- Wire Channels: 3.2 mm wide x 3.0 mm deep vertical wire routing channels for 12 AWG
-  solid copper phase lines on the front face.
+- Wire Channels: Continuous 3.2 mm wide x 3.0 mm deep vertical wire routing channels
+  spaced 25.0 mm apart on the front face for 12 AWG solid copper phase lines.
 - Spine Joints: Standardized male tenon (+Z) and female mortise (-Z) interlocking interfaces
-  with 2.6 mm cross-pin locking holes mating with bt4v_spine_segment.py.
+  with 2.6 mm cross-pin locking holes mating directly with Bay 2 and Bay 3 brackets.
 
 Run headless:
-    /snap/bin/freecad.cmd -c python/bt4v_center_feed.py
+    /snap/bin/freecad.cmd python/bt4v_center_feed.py
 or:
-    freecadcmd -c python/bt4v_center_feed.py
+    freecadcmd python/bt4v_center_feed.py
 """
 
 import math
@@ -39,10 +41,10 @@ import Mesh
 import Part
 
 # --------------------------------------------------------------------------
-# VERIFICATION BASELINES & TOLERANCES (Requirements.md §5.3, §16.3; Plan.md §2.2)
+# VERIFICATION BASELINES & TOLERANCES (Requirements.md §5.3, §16.3)
 # --------------------------------------------------------------------------
-EXPECT_EXTENTS = (40.0, 24.0, 70.0)  # mm: X, Y, Z extents
-EXPECT_VOLUME = 28500.0  # mm^3: nominal volume
+EXPECT_EXTENTS = (40.0, 24.0, 110.0)  # mm: X, Y, Z extents (100 mm active + 10 mm tenon)
+EXPECT_VOLUME = 42000.0  # mm^3: nominal volume
 BBOX_TOL = 0.1  # mm: per-axis bounding-box extent tolerance
 VOL_TOL = 0.02  # +/- fraction of expected volume (2%)
 
@@ -54,48 +56,48 @@ DEFAULT_OUT = os.path.join(PROJECT_ROOT, "stl", "BT4V_Center_Feed.stl")
 # PARAMETERS (mm)
 # --------------------------------------------------------------------------
 # Outer body envelope
-BODY_X = 40.0  # Width (X: -20.0 to +20.0)
-BODY_Y = 24.0  # Depth (Y: -12.0 to +12.0)
-BODY_Z = 60.0  # Main body height (Z: 0.0 to 60.0)
+BODY_X = 40.0  # Central hub width (X: -20.0 to +20.0)
+BODY_Y = 24.0  # Central hub depth (Y: -12.0 to +12.0)
+BODY_Z = 100.0  # Active body height between Bay 2 and Bay 3 shoulders (Z: 0.0 to 100.0)
 
 # Spine interlock joints
 TENON_W = 12.0  # Male tenon width in X
 TENON_D = 8.0  # Male tenon depth in Y
-TENON_H = 10.0  # Male tenon height in Z (protrudes Z: 60.0 to 70.0)
+TENON_H = 10.0  # Male tenon height in Z (protrudes Z: 100.0 to 110.0)
 
 MORTISE_W = 12.0  # Female mortise socket width in X
 MORTISE_D = 8.0  # Female mortise socket depth in Y
 MORTISE_H = 10.0  # Female mortise socket depth in Z (recess Z: 0.0 to 10.0)
 
 PIN_D = 2.6  # Cross-pin hole diameter (2.5 mm pin / M2.5 screw clearance)
-PIN_TOP_Z = 65.0  # Top cross-pin center Z (5.0 mm above shoulder)
-PIN_BOT_Z = 5.0  # Bottom cross-pin center Z (5.0 mm above bottom face)
+PIN_TOP_Z = 105.0  # Top cross-pin center Z (5.0 mm above shoulder Z = 100.0)
+PIN_BOT_Z = 5.0  # Bottom cross-pin center Z (5.0 mm above bottom face Z = 0.0)
 
 # Phase line channels and terminal posts
 TERM_PITCH = 25.0  # Center-to-center terminal spacing (X = -12.5, +12.5)
-TERM_Z = 50.0  # Terminal post vertical center
+TERM_Z = 50.0  # Terminal post vertical center (exact electrical midpoint Z = 50.0)
 M4_HOLE_D = 4.3  # M4 clearance hole diameter
 HEX_AF = 7.2  # M4 hex nut pocket across flats (0.2 mm clearance)
 HEX_DEPTH = 3.5  # M4 captured hex nut pocket depth
 WIRE_CH_W = 3.2  # Phase line channel width (12 AWG clearance)
 WIRE_CH_D = 3.0  # Phase line channel depth
 
-# RCA VH101R balun cradle
+# RCA VH101R balun cradle (centered around Z = 22.0 to 50.0 mm)
 BALUN_CRADLE_R = 9.0  # Balun body radius (18.0 mm diameter)
-BALUN_CRADLE_Z0 = 18.0  # Balun body lower Z
-BALUN_CRADLE_LEN = 28.0  # Balun body length in Z (to Z = 46.0)
+BALUN_CRADLE_Z0 = 20.0  # Balun body lower Z
+BALUN_CRADLE_LEN = 26.0  # Balun body length in Z (to Z = 46.0)
 BALUN_NECK_R = 6.0  # Balun F-connector neck radius (12.0 mm diameter)
-BALUN_NECK_Z0 = 10.0  # Balun neck lower Z (to Z = 18.0)
-BALUN_LEAD_Z0 = 46.0  # Balun spade lead breakout lower Z (to Z = 52.0)
+BALUN_NECK_Z0 = 12.0  # Balun neck lower Z (to Z = 20.0)
+BALUN_LEAD_Z0 = 46.0  # Balun spade lead breakout lower Z (to Z = 54.0)
 
 # Coaxial strain relief
 ZIPTIE_W = 4.0  # Zip-tie loop slot width in X
 ZIPTIE_H = 2.0  # Zip-tie loop slot height in Z
-ZIPTIE_Z = 13.0  # Zip-tie slot center Z (below balun cradle)
+ZIPTIE_Z = 14.0  # Zip-tie slot center Z (below balun cradle)
 
 # Weight relief and profile shaping
-SIDE_CUT_W = 3.5  # Lateral waist cutout width
-REAR_POCKET_D = 6.305  # Rear lightening pocket depth (calibrated for 28,500 mm^3)
+SIDE_CUT_W = 3.5  # Lateral waist cutout width in central hub
+REAR_POCKET_D = 6.8  # Rear lightening pocket depth
 
 
 # --------------------------------------------------------------------------
@@ -118,11 +120,11 @@ def hex_prism(across_flats, height):
 # --------------------------------------------------------------------------
 def build_center_feed():
     """Build the Center Feed Hub solid model conforming to BT4-V specifications."""
-    # 1. Base body block (40.0 x 24.0 x 60.0 mm)
+    # 1. Base body block (40.0 x 24.0 x 100.0 mm)
     base = Part.makeBox(BODY_X, BODY_Y, BODY_Z)
     base.translate(App.Vector(-BODY_X / 2.0, -BODY_Y / 2.0, 0.0))
 
-    # 2. Male tenon joint at +Z end (12.0 x 8.0 x 10.0 mm, Z: 60.0 to 70.0)
+    # 2. Male tenon joint at +Z end (12.0 x 8.0 x 10.0 mm, Z: 100.0 to 110.0)
     tenon = Part.makeBox(TENON_W, TENON_D, TENON_H)
     tenon.translate(App.Vector(-TENON_W / 2.0, -TENON_D / 2.0, BODY_Z))
     solid = base.fuse(tenon)
@@ -135,19 +137,17 @@ def build_center_feed():
     cutters.append(mortise)
 
     # 4. Standard 2.6 mm cross-pin locking holes through Y
-    # Top pin through male tenon at Z = 65.0 mm
     top_pin = Part.makeCylinder(
-        PIN_D / 2.0, 26.0, App.Vector(0.0, -13.0, PIN_TOP_Z), App.Vector(0.0, 1.0, 0.0)
+        PIN_D / 2.0, 28.0, App.Vector(0.0, -14.0, PIN_TOP_Z), App.Vector(0.0, 1.0, 0.0)
     )
     cutters.append(top_pin)
-    # Bottom pin through female mortise at Z = 5.0 mm
     bot_pin = Part.makeCylinder(
-        PIN_D / 2.0, 26.0, App.Vector(0.0, -13.0, PIN_BOT_Z), App.Vector(0.0, 1.0, 0.0)
+        PIN_D / 2.0, 28.0, App.Vector(0.0, -14.0, PIN_BOT_Z), App.Vector(0.0, 1.0, 0.0)
     )
     cutters.append(bot_pin)
 
     # 5. Vertical wire routing channels on front face (Y = +12.0 mm)
-    # 3.2 mm wide x 3.0 mm deep, spaced 25.0 mm apart (X = -12.5 and +12.5)
+    # 3.2 mm wide x 3.0 mm deep, spaced 25.0 mm apart (X = -12.5 and +12.5) across full 100 mm active height
     wire_l = Part.makeBox(
         WIRE_CH_W,
         WIRE_CH_D + 1.0,
@@ -221,12 +221,12 @@ def build_center_feed():
     )
     cutters.append(neck_cyl.fuse(neck_open))
 
-    # 10. Balun lead breakout pocket (Z: 46.0 to 52.0 mm)
+    # 10. Balun lead breakout pocket (Z: 46.0 to 54.0 mm)
     cutters.append(
         Part.makeBox(
             28.0,
             8.0,
-            6.0,
+            8.0,
             App.Vector(-14.0, 4.0, BALUN_LEAD_Z0),
         )
     )
@@ -241,24 +241,35 @@ def build_center_feed():
         )
     )
 
-    # 12. Top shoulder transitions from 40 mm wing width to 20 mm spine strut (Z: 55.0 to 60.0 mm)
-    cutters.append(Part.makeBox(10.0, BODY_Y + 2.0, 6.0, App.Vector(-20.0, -BODY_Y / 2.0 - 1.0, 55.0)))
-    cutters.append(Part.makeBox(10.0, BODY_Y + 2.0, 6.0, App.Vector(10.0, -BODY_Y / 2.0 - 1.0, 55.0)))
+    # 12. Top and bottom lateral shoulder cuts narrowing 40 mm hub to 30 mm spine extension
+    # Top extension (Z: 75.0 to 100.0 mm): cut |X| > 15.0 mm
+    cutters.append(Part.makeBox(6.0, BODY_Y + 2.0, 26.0, App.Vector(-21.0, -BODY_Y / 2.0 - 1.0, 75.0)))
+    cutters.append(Part.makeBox(6.0, BODY_Y + 2.0, 26.0, App.Vector(15.0, -BODY_Y / 2.0 - 1.0, 75.0)))
 
-    # 13. Bottom shoulder transitions outside the 20 mm spine interface (Z: 0.0 to 8.0 mm)
-    cutters.append(Part.makeBox(10.0, BODY_Y + 2.0, 8.0, App.Vector(-20.0, -BODY_Y / 2.0 - 1.0, 0.0)))
-    cutters.append(Part.makeBox(10.0, BODY_Y + 2.0, 8.0, App.Vector(10.0, -BODY_Y / 2.0 - 1.0, 0.0)))
+    # Bottom extension (Z: 0.0 to 25.0 mm): cut |X| > 15.0 mm
+    cutters.append(Part.makeBox(6.0, BODY_Y + 2.0, 25.0, App.Vector(-21.0, -BODY_Y / 2.0 - 1.0, -1.0)))
+    cutters.append(Part.makeBox(6.0, BODY_Y + 2.0, 25.0, App.Vector(15.0, -BODY_Y / 2.0 - 1.0, -1.0)))
 
-    # 14. Side waist cutouts (between Z = 8.0 and 42.0 mm)
-    cutters.append(Part.makeBox(SIDE_CUT_W, BODY_Y + 2.0, 34.0, App.Vector(-20.0, -BODY_Y / 2.0 - 1.0, 8.0)))
-    cutters.append(Part.makeBox(SIDE_CUT_W, BODY_Y + 2.0, 34.0, App.Vector(20.0 - SIDE_CUT_W, -BODY_Y / 2.0 - 1.0, 8.0)))
+    # 13. Rear step-ins on upper (Z: 75..100) and lower (Z: 0..25) spine extensions (reducing depth on rear)
+    cutters.append(Part.makeBox(42.0, 6.0, 26.0, App.Vector(-21.0, -BODY_Y / 2.0 - 1.0, 75.0)))
+    cutters.append(Part.makeBox(42.0, 6.0, 25.0, App.Vector(-21.0, -BODY_Y / 2.0 - 1.0, -1.0)))
 
-    # 15. Rear lightening pockets flanking the central spine (Z: 8.0 to 42.0 mm)
-    cutters.append(Part.makeBox(10.0, REAR_POCKET_D, 34.0, App.Vector(-17.5, -BODY_Y / 2.0, 8.0)))
-    cutters.append(Part.makeBox(10.0, REAR_POCKET_D, 34.0, App.Vector(7.5, -BODY_Y / 2.0, 8.0)))
+    # 14. Side waist cutouts in central hub (Z: 25.0 to 75.0 mm)
+    cutters.append(Part.makeBox(SIDE_CUT_W, BODY_Y + 2.0, 50.0, App.Vector(-20.0, -BODY_Y / 2.0 - 1.0, 25.0)))
+    cutters.append(Part.makeBox(SIDE_CUT_W, BODY_Y + 2.0, 50.0, App.Vector(20.0 - SIDE_CUT_W, -BODY_Y / 2.0 - 1.0, 25.0)))
 
-    # 16. Central rear I-beam channel (Z: 16.0 to 44.0 mm)
-    cutters.append(Part.makeBox(10.0, 3.0, 28.0, App.Vector(-5.0, -BODY_Y / 2.0, 16.0)))
+    # 15. Rear lightening pockets flanking the central spine (Z: 25.0 to 75.0 mm)
+    cutters.append(Part.makeBox(11.0, REAR_POCKET_D, 50.0, App.Vector(-16.5, -BODY_Y / 2.0 - 0.1, 25.0)))
+    cutters.append(Part.makeBox(11.0, REAR_POCKET_D, 50.0, App.Vector(5.5, -BODY_Y / 2.0 - 0.1, 25.0)))
+
+    # 16. Upper and lower side I-beam lightening pockets opening from X = +/-15.0 mm
+    cutters.append(Part.makeBox(12.0, 8.0, 18.0, App.Vector(-15.1, -3.0, 78.0)))
+    cutters.append(Part.makeBox(12.0, 8.0, 18.0, App.Vector(3.1, -3.0, 78.0)))
+    cutters.append(Part.makeBox(8.0, 8.0, 12.0, App.Vector(-15.1, -3.0, 11.0)))
+    cutters.append(Part.makeBox(8.0, 8.0, 12.0, App.Vector(7.1, -3.0, 11.0)))
+
+    # 17. Central rear I-beam channel (Z: 28.0 to 72.0 mm)
+    cutters.append(Part.makeBox(10.0, 3.2, 44.0, App.Vector(-5.0, -BODY_Y / 2.0 - 0.1, 28.0)))
 
     # Apply all cuts
     for cutter in cutters:
@@ -268,7 +279,7 @@ def build_center_feed():
 
 
 # --------------------------------------------------------------------------
-# STRUCTURAL VERIFICATION CONTRACT (Plan.md §3.1, §4; Requirements.md §16.3)
+# STRUCTURAL VERIFICATION CONTRACT (Requirements.md §16.3)
 # --------------------------------------------------------------------------
 def verify_shape(shape, label, expected_extents, expected_volume, out_path):
     """Enforce one valid solid, bbox extents within BBOX_TOL, volume within
@@ -404,20 +415,22 @@ def verify_shape(shape, label, expected_extents, expected_volume, out_path):
 def parse_args():
     """Parse command line arguments and environment variables."""
     out_path = os.environ.get("OUT_PATH", DEFAULT_OUT)
+    if any(arg in ("-h", "--help") for arg in sys.argv):
+        print(__doc__, flush=True)
+        sys.exit(0)
     for i, arg in enumerate(sys.argv):
-        if arg in ("-h", "--help"):
-            print(__doc__)
-            sys.exit(0)
-        if arg.endswith("bt4v_center_feed.py") and i + 1 < len(sys.argv):
-            candidate = sys.argv[i + 1]
-            if candidate.startswith("-"):
-                print(
-                    "ERROR: Unrecognized or invalid parameter flag: %s" % candidate,
-                    file=sys.stderr,
-                    flush=True,
-                )
-                sys.exit(2)
-            out_path = candidate
+        if arg.endswith("bt4v_center_feed.py"):
+            extra = [a for a in sys.argv[i + 1 :] if a not in ("--", "--pass")]
+            for candidate in extra:
+                if candidate.startswith("-"):
+                    print(
+                        "ERROR: Unrecognized or invalid parameter flag: %s" % candidate,
+                        file=sys.stderr,
+                        flush=True,
+                    )
+                    sys.exit(2)
+            if extra:
+                out_path = extra[0]
             break
     return out_path
 
@@ -449,4 +462,3 @@ except Exception as exc:
     sys.exit(1)
 
 sys.exit(0)
-

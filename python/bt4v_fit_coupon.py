@@ -15,8 +15,9 @@ Technical Specifications:
 Mechanical & RF Fit-Test Features:
 1. Friction Channels: 4 parallel test channels (2.8, 3.0, 3.2, 3.4 mm widths x 3.0 mm deep)
    for calibrating 12 AWG solid copper wire friction fit across bare and insulated wire diameters.
-2. Snap Channels: 2 snap channels with 2.2 mm and 2.4 mm mouth openings over 3.3 mm round cavities
-   with entry chamfers for verifying wire snap retention in triangular tine spreaders.
+2. Snap Channels: 2 C-clip snap channels with 2.2 mm and 2.4 mm mouth openings over 3.3 mm
+   round cavities with entry chamfers for verifying wire snap retention in full-length bowtie
+   backing struts and phase crossover spacers.
 3. M4 Hardware Stack: 4.3 mm clearance hole with 7.2 mm across-flats hex nut capture pocket
    (3.5 mm deep) to test M4 bolt through-clearance and anti-rotation hex nut seating.
 4. Spine Interlock Joint: Standard modular spine interlock features:
@@ -24,14 +25,14 @@ Mechanical & RF Fit-Test Features:
    - Female mortise: 12.0 mm (W) x 8.0 mm (D) x 10.0 mm (L) socket with 2.6 mm cross-pin hole.
 5. Balun Lug Spacing: 25.0 mm pitch test studs (OD 4.0 mm) with concentric pilot holes located in a
    recessed deck for testing direct spade lug alignment of the RCA VH101R matching transformer.
-6. Backing Strut Snap Jaws & Cradle Channel: Dedicated test pocket and snap-fit test
-   features for verifying bt4v_bowtie_backing.py full-length backing strut snap-jaw retention,
-   root mounting slot, and 3.2 x 3.0 mm cradle channel wire fit.
+6. Backing Strut Socket: 4.2 mm (X) x 6.2 mm (Y) x 4.2 mm deep test mortise socket on the
+   full-height top deck for verifying bt4v_bowtie_backing.py 4.0 x 6.0 x 4.0 mm root tenon fit
+   against production Bay Bracket wing sockets and daisy-chain tip mortises.
 
 Run headless:
-    /snap/bin/freecad.cmd -c python/bt4v_fit_coupon.py
+    /snap/bin/freecad.cmd python/bt4v_fit_coupon.py
 or:
-    freecadcmd -c python/bt4v_fit_coupon.py
+    freecadcmd python/bt4v_fit_coupon.py
 """
 
 import math
@@ -116,7 +117,14 @@ BALUN_DECK_X_LEN = 36.0  # Recessed deck length in X (X: -3.0 to +33.0 mm)
 BALUN_DECK_Y0 = -21.0  # Recessed deck lower Y
 BALUN_DECK_Y_LEN = 16.0  # Recessed deck width in Y (Y: -21.0 to -5.0 mm)
 
-# 5. Top face recessed panels
+# 5. Backing strut root mortise test socket (matches 4.2 x 6.2 x 4.2 mm production mortise)
+BACKING_SOCKET_X = -10.0  # Test socket center X (on full-height Z = 10.0 mm top deck)
+BACKING_SOCKET_Y = -13.0  # Test socket center Y (between M4 stack and balun deck)
+BACKING_SOCKET_W = 4.2  # Socket width in X (matches bt4v_bay_bracket.py SUPP_SLOT_W)
+BACKING_SOCKET_D = 6.2  # Socket length in Y (matches bt4v_bay_bracket.py SUPP_SLOT_Y)
+BACKING_SOCKET_H = 4.2  # Socket depth in Z (Z: 5.8 to 10.0 mm, matches SUPP_SLOT_H)
+
+# 6. Top face recessed panels
 TOP_LABEL_X0 = -42.0  # Identification panel lower X
 TOP_LABEL_X_LEN = 26.0  # Identification panel length in X (X: -42.0 to -16.0 mm)
 TOP_LABEL_Y0 = 6.0  # Identification panel lower Y
@@ -129,7 +137,7 @@ TOP_SW_Y0 = -22.0  # Southwest top recess lower Y
 TOP_SW_Y_LEN = 16.0  # Southwest top recess width in Y (Y: -22.0 to -6.0 mm)
 TOP_SW_DEPTH = 2.0  # Recess depth from top face (Z: 8.0 to 10.0 mm)
 
-# 6. Underside weight-relief & calibration bays (from Z = 0.0 upwards)
+# 7. Underside weight-relief & calibration bays (from Z = 0.0 upwards)
 BAY_NW_X0 = -42.0  # Northwest bay X: -42.0 to -16.0 mm
 BAY_NW_X_LEN = 26.0
 BAY_NW_Y0 = 6.0  # Northwest bay Y: 6.0 to 22.0 mm
@@ -167,7 +175,7 @@ BAY_CENTRAL_Y_LEN = 6.0
 BAY_CENTRAL_DEPTH = 4.0  # Bay depth in Z
 
 # Calibrated underside tuning pocket length to hit exact 26,500.0 mm^3 volume target
-CAL_POCKET_LEN = 2.8  # mm: Calibrated length of underside tuning pocket
+CAL_POCKET_LEN = 1.46  # mm: Calibrated length of underside tuning pocket
 
 
 # --------------------------------------------------------------------------
@@ -360,12 +368,16 @@ def build_fit_coupon():
     cutters.append(stud1_hole)
     cutters.append(stud2_hole)
 
-    # 7.5 Backing strut snap-jaw & mounting slot test pocket (4.1 x 6.0 mm x 3.5 mm deep)
+    # 7.5 Backing strut root mortise test socket (4.2 x 6.2 mm x 4.2 mm deep, Z: 5.8 to 10.0 mm)
     backing_test_pocket = Part.makeBox(
-        4.1,
-        6.0,
-        3.5 + 0.1,
-        App.Vector(-34.0 - 2.05, -14.0 - 3.0, BODY_Z - 3.5),
+        BACKING_SOCKET_W,
+        BACKING_SOCKET_D,
+        BACKING_SOCKET_H + 0.1,
+        App.Vector(
+            BACKING_SOCKET_X - BACKING_SOCKET_W / 2.0,
+            BACKING_SOCKET_Y - BACKING_SOCKET_D / 2.0,
+            BODY_Z - BACKING_SOCKET_H,
+        ),
     )
     cutters.append(backing_test_pocket)
 
@@ -589,20 +601,22 @@ def verify_shape(shape, label, expected_extents, expected_volume, out_path):
 def parse_args():
     """Parse command line arguments and environment variables."""
     out_path = os.environ.get("OUT_PATH", DEFAULT_OUT)
+    if any(arg in ("-h", "--help") for arg in sys.argv):
+        print(__doc__, flush=True)
+        sys.exit(0)
     for i, arg in enumerate(sys.argv):
-        if arg in ("-h", "--help"):
-            print(__doc__)
-            sys.exit(0)
-        if arg.endswith("bt4v_fit_coupon.py") and i + 1 < len(sys.argv):
-            candidate = sys.argv[i + 1]
-            if candidate.startswith("-"):
-                print(
-                    "ERROR: Unrecognized or invalid parameter flag: %s" % candidate,
-                    file=sys.stderr,
-                    flush=True,
-                )
-                sys.exit(2)
-            out_path = candidate
+        if arg.endswith("bt4v_fit_coupon.py"):
+            extra = [a for a in sys.argv[i + 1 :] if a not in ("--", "--pass")]
+            for candidate in extra:
+                if candidate.startswith("-"):
+                    print(
+                        "ERROR: Unrecognized or invalid parameter flag: %s" % candidate,
+                        file=sys.stderr,
+                        flush=True,
+                    )
+                    sys.exit(2)
+            if extra:
+                out_path = extra[0]
             break
     return out_path
 

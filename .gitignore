@@ -7,6 +7,9 @@ __pycache__/
 venv/
 ENV/
 
+# Generated 3D Printable Meshes
+stl/
+
 # OS specific
 .DS_Store
 Thumbs.db

@@ -1,29 +1,41 @@
 """
 BT4-V 3D Printed Antenna — Full-Length Bowtie Backing Strut Generator (v0.3.0)
 
-Generates the full-length structural backing spars and cradles that run continuously
+Generates the universal interlocking full-length structural backing strut that snaps
 behind every V-whisker arm from the central bay bracket out to the wire tip,
-exported as 'stl/BT4V_Bowtie_Backing.stl'. Quantity required: 8 (2 per bay across Bays 1–4).
+exported as 'stl/BT4V_Bowtie_Backing.stl'.
+Quantity required: 24 (1 strut per 200 mm UHF arm across Bays 2 & 3 [8 pcs];
+2 daisy-chained struts per 340 mm VHF arm across Bays 1 & 4 [16 pcs]).
 
 Technical Specifications:
 - Requirements Baseline: Requirements.md §9, §16.3
-- Plan Baseline: Plan.md §2.1, §2.3, §3.1 (T1.1, T1.2)
-- Body Dimensions / Extents: 210.0 mm (X) x 12.0 mm (Y) x 8.0 mm (Z) (tol +/-0.1 mm)
-- Nominal Volume: 2,400 mm^3 (+/-2% -> acceptable range: 2,352 – 2,448 mm^3)
+- Body Dimensions / Extents: 180.0 mm (X) x 12.0 mm (Y) x 8.0 mm (Z) (tol +/-0.1 mm)
+  * Active body span: 176.0 mm + 4.0 mm root tenon = 180.0 mm total X extent
+    (X: -90.0..-86.0 root tenon + X: -86.0..+90.0 body with 4.2 x 6.2 x 4.2 mm tip mortise).
+  * Combined with ~15.0 mm inside the Bay Bracket wing:
+    - 1 strut backs a 200 mm UHF arm (~15 + 176 = ~191 mm root-to-tip support).
+    - 2 daisy-chained struts back a 340 mm VHF arm (interlocking the outer strut's
+      4.0 mm root tenon into the inner strut's 4.2 mm tip mortise).
+- Nominal Volume: 2,200 mm^3 (+/-2% -> acceptable range: 2,156 – 2,244 mm^3)
 - Solid Count: Exactly 1 valid solid (len(shape.Solids) == 1, shape.isValid() == True)
 
 Mechanical & RF Features:
 - Purpose: Provides continuous 3D-printed structural backing behind the entire length
-  of every V-whisker arm (from apex to tip), permanently locking exact flare angles
-  (32.5° UHF, 25.5° VHF) and completely eliminating gravity droop, sag, or vibration.
-- Continuous Cradle Channel: Full-length snap-fit wire retention channel (3.2 mm wide x
-  3.0 mm deep with lead-in entry chamfers) gripping the 12 AWG solid copper wire along its entire span.
+  of every V-whisker arm (from bracket root to wire tip), permanently locking exact
+  flare angles (32.5° UHF, 25.5° VHF) and completely eliminating gravity droop, sag,
+  or vibration.
+- Snap-Fit C-Clip Cradle Channel: Continuous snap-fit wire retention channel (2.4 mm
+  snap throat opening into a 3.2 mm circular wire cavity) gripping the 12 AWG solid
+  copper wire along its entire span.
+- Interlocking Root Tenon & Tip Mortise: Inner root end (-X) features a 4.0 x 6.0 x 4.0 mm
+  male tenon that locks into either the Bay Bracket wing socket or the female mortise
+  socket (+X) of an adjacent backing strut for 340 mm VHF arm extension.
 - Strut Profile: Ribbed I-beam / truss cross-section providing maximum rigidity along
-  the full arm length while maintaining minimal mass (~3.5 g each).
-- Interlock Interface: Inner root end locks securely into the bay bracket support slot;
-  outer tip features a closed terminal cap.
+  the full arm length while maintaining minimal mass (~2.7 g each).
 
 Run headless:
+    /snap/bin/freecad.cmd python/bt4v_bowtie_backing.py
+or:
     freecadcmd python/bt4v_bowtie_backing.py
 """
 
@@ -37,10 +49,10 @@ import Mesh
 import Part
 
 # --------------------------------------------------------------------------
-# VERIFICATION BASELINES & TOLERANCES (Requirements.md §9.3, §16.3; Plan.md §2.3, §3.1)
+# VERIFICATION BASELINES & TOLERANCES (Requirements.md §9.3, §16.3)
 # --------------------------------------------------------------------------
-EXPECT_EXTENTS = (210.0, 12.0, 8.0)  # mm: X, Y, Z extents
-EXPECT_VOLUME = 2400.0  # mm^3: nominal volume
+EXPECT_EXTENTS = (180.0, 12.0, 8.0)  # mm: X, Y, Z extents (176.0 mm active body span + 4.0 mm root tenon = 180.0 mm)
+EXPECT_VOLUME = 2200.0  # mm^3: nominal volume
 BBOX_TOL = 0.1  # mm: per-axis bounding-box extent tolerance
 VOL_TOL = 0.02  # +/- fraction of expected volume (2%)
 
@@ -52,35 +64,22 @@ DEFAULT_OUT = os.path.join(PROJECT_ROOT, "stl", "BT4V_Bowtie_Backing.stl")
 # PARAMETERS (mm)
 # --------------------------------------------------------------------------
 # Outer body envelope
-BODY_X = 210.0  # Total length (X: -105.0 to +105.0)
+BODY_X = 180.0  # Total length (X: -90.0 to +90.0)
 BODY_Y = 12.0   # Body depth (Y: -6.0 to +6.0)
 BODY_Z = 8.0    # Body height (Z: 0.0 to 8.0)
 
-# Wire cradle channel
-WIRE_CH_W = 3.2   # Channel width in Y
-WIRE_CH_D = 3.0   # Channel depth from top face (Z: 8.0 down to 5.0)
+# Snap-fit C-clip wire cradle channel along top face
+SNAP_MOUTH_W = 2.4  # Snap throat opening width in Y
+WIRE_CAV_D = 3.2    # Circular wire cavity diameter (12 AWG clearance)
+WIRE_CAV_Z = 6.1    # Center Z of circular wire cavity
 
 # I-beam profile parameters
 WEB_Y = 1.0       # Central web thickness in Y (-0.5 to +0.5 mm)
-STRUT_Z_MIN = 2.50 # Lower Z boundary of web
-STRUT_Z_MAX = 5.50 # Upper Z boundary of web
+STRUT_Z_MIN = 2.40 # Lower Z boundary of web
+STRUT_Z_MAX = 5.40 # Upper Z boundary of web
 
-# Calibrated pocket depth to achieve exact 2,400 mm^3 volume
+# Pocket depth
 CAL_POCKET_D = 5.5  # Depth of web pockets into front/rear faces
-
-
-# --------------------------------------------------------------------------
-# GEOMETRY HELPERS
-# --------------------------------------------------------------------------
-def make_chamfer(cx, cy0, cy_len, z0, z1, w0, w1):
-    """Create a flared entry chamfer cutter prism in X-Z plane extruded along Y."""
-    p1 = App.Vector(cx - w1 / 2.0, cy0, z1)
-    p2 = App.Vector(cx - w0 / 2.0, cy0, z0)
-    p3 = App.Vector(cx + w0 / 2.0, cy0, z0)
-    p4 = App.Vector(cx + w1 / 2.0, cy0, z1)
-    poly = Part.makePolygon([p1, p2, p3, p4, p1])
-    face = Part.Face(poly)
-    return face.extrude(App.Vector(0.0, cy_len, 0.0))
 
 
 # --------------------------------------------------------------------------
@@ -88,7 +87,7 @@ def make_chamfer(cx, cy0, cy_len, z0, z1, w0, w1):
 # --------------------------------------------------------------------------
 def build_bowtie_backing():
     """Build the Full-Length Bowtie Backing Strut solid model conforming to BT4-V specifications."""
-    # 1. Base body envelope block (210.0 x 12.0 x 8.0 mm, centered on X and Y, Z: 0.0 to 8.0)
+    # 1. Base body envelope block (180.0 x 12.0 x 8.0 mm, centered on X and Y, Z: 0.0 to 8.0)
     base = Part.makeBox(
         BODY_X,
         BODY_Y,
@@ -98,40 +97,43 @@ def build_bowtie_backing():
 
     cutters = []
 
-    # 2. Continuous wire cradle channel along top face (Z: 5.0 to 8.0)
-    channel_len = 204.0
-    channel = Part.makeBox(
+    # 2. Continuous C-clip snap-fit wire channel along top face (X: -86.0 to +86.0 mm)
+    channel_len = 172.0
+    # Narrow 2.4 mm snap throat at top face (Z: 6.1 to 8.1 mm)
+    throat = Part.makeBox(
         channel_len,
-        WIRE_CH_W,
-        WIRE_CH_D + 1.0,
-        App.Vector(-channel_len / 2.0, -WIRE_CH_W / 2.0, BODY_Z - WIRE_CH_D),
+        SNAP_MOUTH_W,
+        BODY_Z - WIRE_CAV_Z + 0.5,
+        App.Vector(-channel_len / 2.0, -SNAP_MOUTH_W / 2.0, WIRE_CAV_Z),
     )
-    cutters.append(channel)
+    cutters.append(throat)
 
-    # 3. Lead-in entry chamfers at root (X = -105.0) and tip (X = +105.0)
-    chamfer_root = make_chamfer(
-        -BODY_X / 2.0,
-        -BODY_Y / 2.0 - 2.0,
-        BODY_Y + 4.0,
-        BODY_Z - WIRE_CH_D,
-        BODY_Z + 1.0,
-        WIRE_CH_W,
-        WIRE_CH_W + 1.5,
+    # Circular 3.2 mm wire retention cavity along X
+    cav = Part.makeCylinder(
+        WIRE_CAV_D / 2.0,
+        channel_len,
+        App.Vector(-channel_len / 2.0, 0.0, WIRE_CAV_Z),
+        App.Vector(1.0, 0.0, 0.0),
     )
-    chamfer_tip = make_chamfer(
-        BODY_X / 2.0,
-        -BODY_Y / 2.0 - 2.0,
-        BODY_Y + 4.0,
-        BODY_Z - WIRE_CH_D,
-        BODY_Z + 1.0,
-        WIRE_CH_W,
-        WIRE_CH_W + 1.5,
-    )
-    cutters.append(chamfer_root)
-    cutters.append(chamfer_tip)
+    cutters.append(cav)
 
-    # 4. Top and bottom Z-profile cutouts (leaving end solid blocks for root/tip integrity)
-    span_len = BODY_X - 16.0  # 194.0 mm central span
+    # 3. Root male tenon shoulder cuts at -X end (X: -90.0 to -86.0 mm, forming 4.0 x 6.0 x 4.0 mm tenon)
+    cutters.append(Part.makeBox(4.0, 3.0, BODY_Z + 2.0, App.Vector(-90.0, 3.0, -1.0)))
+    cutters.append(Part.makeBox(4.0, 3.0, BODY_Z + 2.0, App.Vector(-90.0, -6.0, -1.0)))
+    cutters.append(Part.makeBox(4.0, BODY_Y + 2.0, 2.0, App.Vector(-90.0, -BODY_Y / 2.0 - 1.0, 0.0)))
+    cutters.append(Part.makeBox(4.0, BODY_Y + 2.0, 2.0, App.Vector(-90.0, -BODY_Y / 2.0 - 1.0, 6.0)))
+
+    # 4. Tip female mortise socket at +X end (X: +85.8 to +90.1 mm, 4.2 x 6.2 x 4.2 mm socket)
+    mortise_tip = Part.makeBox(
+        4.3,
+        6.2,
+        4.2,
+        App.Vector(BODY_X / 2.0 - 4.2, -3.1, 1.9),
+    )
+    cutters.append(mortise_tip)
+
+    # 5. Top and bottom Z-profile cutouts (leaving end solid blocks for root/tip integrity)
+    span_len = BODY_X - 18.0  # 162.0 mm central span (X: -81.0 to +81.0)
     z_cut_top = Part.makeBox(
         span_len,
         BODY_Y + 4.0,
@@ -147,7 +149,7 @@ def build_bowtie_backing():
     cutters.append(z_cut_top)
     cutters.append(z_cut_bot)
 
-    # 5. Side Y-profile cutouts (forming I-beam flanges)
+    # 6. Side Y-profile cutouts (forming I-beam flanges)
     y_cut_front = Part.makeBox(
         span_len,
         BODY_Y / 2.0 - WEB_Y / 2.0 + 1.0,
@@ -163,16 +165,15 @@ def build_bowtie_backing():
     cutters.append(y_cut_front)
     cutters.append(y_cut_rear)
 
-    # 6. Ribbed I-beam side pockets along central web
+    # 7. Ribbed I-beam side pockets along central web
     pocket_spans = [
-        (-90.0, -70.0),
-        (-66.0, -46.0),
-        (-42.0, -22.0),
-        (-18.0, 2.0),
-        (6.0, 26.0),
-        (30.0, 50.0),
-        (54.0, 74.0),
-        (78.0, 94.0),
+        (-78.0, -58.0),
+        (-54.0, -34.0),
+        (-30.0, -10.0),
+        (-6.0, 14.0),
+        (18.0, 38.0),
+        (42.0, 62.0),
+        (66.0, 78.0),
     ]
     pocket_z0 = STRUT_Z_MIN + 0.2
     pocket_zh = (STRUT_Z_MAX - STRUT_Z_MIN) - 0.4
@@ -194,9 +195,9 @@ def build_bowtie_backing():
         cutters.append(p_front)
         cutters.append(p_rear)
 
-    # 7. Vertical lightening windows through the central web
-    win_centers = [-78.0, -54.0, -30.0, -6.0, 18.0, 42.0, 66.0, 86.0]
-    win_x_w = 12.0
+    # 8. Vertical lightening windows through the central web
+    win_centers = [-68.0, -44.0, -20.0, 4.0, 28.0, 52.0, 72.0]
+    win_x_w = 10.0
     win_y_w = 3.2
     for cx in win_centers:
         win = Part.makeBox(
@@ -216,7 +217,7 @@ def build_bowtie_backing():
 
 
 # --------------------------------------------------------------------------
-# STRUCTURAL VERIFICATION CONTRACT (Plan.md §3.1, §4; Requirements.md §16.3)
+# STRUCTURAL VERIFICATION CONTRACT (Requirements.md §16.3)
 # --------------------------------------------------------------------------
 def verify_shape(shape, label, expected_extents, expected_volume, out_path):
     """Enforce one valid solid, bbox extents within BBOX_TOL, volume within
@@ -352,20 +353,22 @@ def verify_shape(shape, label, expected_extents, expected_volume, out_path):
 def parse_args():
     """Parse command line arguments and environment variables."""
     out_path = os.environ.get("OUT_PATH", DEFAULT_OUT)
+    if any(arg in ("-h", "--help") for arg in sys.argv):
+        print(__doc__, flush=True)
+        sys.exit(0)
     for i, arg in enumerate(sys.argv):
-        if arg in ("-h", "--help"):
-            print(__doc__)
-            sys.exit(0)
-        if arg.endswith("bt4v_bowtie_backing.py") and i + 1 < len(sys.argv):
-            candidate = sys.argv[i + 1]
-            if candidate.startswith("-"):
-                print(
-                    "ERROR: Unrecognized or invalid parameter flag: %s" % candidate,
-                    file=sys.stderr,
-                    flush=True,
-                )
-                sys.exit(2)
-            out_path = candidate
+        if arg.endswith("bt4v_bowtie_backing.py"):
+            extra = [a for a in sys.argv[i + 1 :] if a not in ("--", "--pass")]
+            for candidate in extra:
+                if candidate.startswith("-"):
+                    print(
+                        "ERROR: Unrecognized or invalid parameter flag: %s" % candidate,
+                        file=sys.stderr,
+                        flush=True,
+                    )
+                    sys.exit(2)
+            if extra:
+                out_path = extra[0]
             break
     return out_path
 
